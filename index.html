@@ -245,6 +245,11 @@ input{font:inherit;color:inherit}
 .amt.on{border-color:var(--blue);background:var(--blue-ll);color:var(--blue)}
 .tulink{display:flex;align-items:center;gap:6px;margin:6px 4px 10px auto;font-size:13.5px;font-weight:700;color:var(--blue);padding:4px 2px}
 @media (max-width:900px){.side{display:none} #preview{padding:12px 0}}
+/* Clean interactive presentation */
+#preview{flex-direction:column;align-items:center;justify-content:flex-start;gap:14px;padding:20px 16px 24px}
+#preview .side{display:none}
+.preview-reset{font-size:13px;color:var(--ink2);padding:9px 16px;border-radius:10px;background:#fff;border:1px solid var(--line);font-weight:600}
+@media(max-width:600px){.topbar{flex-wrap:wrap;gap:8px;padding:10px 12px}.topbar .seg{margin-left:0}.topbar .seg button{font-size:12px;padding:6px 10px}#preview{padding:10px 4px 16px;gap:10px}}
 </style>
 </head>
 <body>
@@ -267,8 +272,8 @@ input{font:inherit;color:inherit}
     <h2>USER FLOW</h2>
     <ol class="steps" id="steps"></ol>
     <div class="explain" id="explain"></div>
-    <button class="reset" onclick="resetAll()">↺ เริ่มต้นใหม่</button>
   </aside>
+  <button class="preview-reset" onclick="resetAll()">↺ เริ่มต้นใหม่</button>
 </section>
 
 <section id="overview">
@@ -966,7 +971,7 @@ function setMode(m){
   fit();
 }
 function fit(){
-  const d=document.getElementById('device');const avH=innerHeight-90-30;const avW=innerWidth-24;
+  const d=document.getElementById('device');const avH=Math.max(260,innerHeight-document.querySelector('.topbar').offsetHeight-100);const avW=innerWidth-24;
   const s=Math.min(1,avH/868,avW/414);d.style.zoom=s<1?s:'';
 }
 addEventListener('resize',fit);
