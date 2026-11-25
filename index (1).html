@@ -1,0 +1,981 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MuvMi — Direct Payment Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --blue:#1555DF; --blue-d:#0F43B5; --blue-l:#E8EFFD; --blue-ll:#F3F6FE;
+  --ink:#141A26; --ink2:#4A5263; --ink3:#8A92A3; --line:#E4E7EE; --bg:#F4F6FA;
+  --green:#16A34A; --green-l:#E7F6EC; --red:#DC3B2F; --red-l:#FDECEA; --amber:#B7791F; --amber-l:#FFF6E0;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:"Noto Sans Thai","Sukhumvit Set","Thonburi","Leelawadee UI",system-ui,sans-serif;color:var(--ink);background:#E9EDF3;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
+input{font:inherit;color:inherit}
+
+/* ---------- presentation chrome ---------- */
+.topbar{position:sticky;top:0;z-index:50;display:flex;align-items:center;gap:16px;padding:12px 24px;background:#fff;border-bottom:1px solid var(--line)}
+.topbar h1{font-size:16px;font-weight:700}
+.topbar .sub{font-size:12.5px;color:var(--ink3)}
+.seg{margin-left:auto;display:flex;background:var(--bg);border-radius:10px;padding:3px}
+.seg button{padding:7px 14px;border-radius:8px;font-size:13.5px;font-weight:600;color:var(--ink2)}
+.seg button.on{background:#fff;color:var(--blue);box-shadow:0 1px 3px rgba(20,26,38,.12)}
+.tag{font-size:11.5px;color:var(--amber);background:var(--amber-l);padding:4px 9px;border-radius:999px;font-weight:600;white-space:nowrap}
+
+/* interactive mode */
+#preview{display:flex;justify-content:center;align-items:flex-start;gap:40px;padding:28px 24px 40px}
+.device{background:#0E1116;border-radius:58px;padding:12px;box-shadow:0 30px 60px -20px rgba(20,26,38,.45),inset 0 0 0 2px #2a2f38;flex:none;transform-origin:top center}
+.device .scr{width:390px;height:844px;border-radius:46px;overflow:hidden;position:relative;background:#fff}
+.side{width:340px;flex:none;position:sticky;top:90px}
+.side h2{font-size:13px;color:var(--ink3);font-weight:600;letter-spacing:.02em;margin-bottom:10px}
+.steps{list-style:none;display:flex;flex-direction:column;gap:6px;margin-bottom:20px}
+.steps li{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:12px;font-size:14px;color:var(--ink2);background:#fff;border:1px solid transparent}
+.steps li b{font-size:12px;width:26px;height:26px;border-radius:8px;display:grid;place-items:center;background:var(--bg);color:var(--ink3);flex:none}
+.steps li.on{border-color:var(--blue);color:var(--ink);font-weight:600}
+.steps li.on b{background:var(--blue);color:#fff}
+.steps li.done b{background:var(--blue-l);color:var(--blue)}
+.explain{background:#fff;border-radius:16px;padding:16px 18px;font-size:13.5px;line-height:1.65;color:var(--ink2)}
+.explain h3{font-size:15px;color:var(--ink);margin-bottom:8px}
+.explain dt{font-weight:700;color:var(--blue);font-size:12.5px;margin-top:8px}
+.side .reset{margin-top:14px;font-size:13px;color:var(--ink2);padding:9px 14px;border-radius:10px;background:#fff;border:1px solid var(--line);font-weight:600}
+
+/* overview mode */
+#overview{display:none;padding:32px 40px 60px}
+.ov-head{max-width:1400px;margin:0 auto 26px}
+.ov-head h2{font-size:24px;font-weight:700}
+.ov-head p{color:var(--ink2);font-size:14px;margin-top:4px}
+.ov-tools{display:flex;gap:6px;margin-top:12px;align-items:center;font-size:13px;color:var(--ink3)}
+.ov-tools button{padding:5px 10px;border-radius:8px;background:#fff;border:1px solid var(--line);font-size:12.5px;font-weight:600;color:var(--ink2)}
+.ov-tools button.on{border-color:var(--blue);color:var(--blue)}
+.ov-grid{display:grid;grid-template-columns:repeat(3,auto);justify-content:center;column-gap:84px;row-gap:56px;position:relative}
+.ov-item{width:390px;position:relative}
+.ov-label{font-size:18px;font-weight:700;margin-bottom:12px;display:flex;gap:10px;align-items:baseline}
+.ov-label span{color:var(--blue)}
+.ov-frame{width:390px;height:844px;border-radius:40px;overflow:hidden;position:relative;background:#fff;box-shadow:0 0 0 1px #d4d9e2,0 18px 40px -18px rgba(20,26,38,.35);pointer-events:none}
+.ov-text{margin-top:16px;background:#fff;border-radius:14px;padding:14px 16px;font-size:13.5px;line-height:1.65;color:var(--ink2)}
+.ov-text dt{font-weight:700;color:var(--blue);font-size:12.5px}
+.ov-text dd{margin-bottom:6px}
+.ov-arrow{position:absolute;top:470px;right:-70px;width:56px;height:24px;color:#9AA6BD}
+.ov-arrow.down{top:auto;bottom:-46px;right:auto;left:50%;transform:translateX(-50%);width:auto;height:auto;font-size:12.5px;font-weight:600;color:#7E8BA3;white-space:nowrap}
+
+/* ---------- phone screen components ---------- */
+.screen{position:absolute;inset:0;display:flex;flex-direction:column;background:var(--bg);overflow:hidden}
+.sb{height:47px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:6px 30px 0 34px;font-size:15.5px;font-weight:600;position:relative;z-index:6}
+.sb.light{color:#fff}
+.sb .ic{display:flex;gap:6px;align-items:center}
+.hdr{flex:none;height:54px;display:flex;align-items:center;padding:0 8px;background:#fff;position:relative}
+.hdr h2{position:absolute;left:0;right:0;text-align:center;font-size:17px;font-weight:700;pointer-events:none}
+.iconbtn{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;color:var(--ink);position:relative;z-index:1}
+.content{flex:1;overflow-y:auto;overflow-x:hidden;padding:16px}
+.content::-webkit-scrollbar{width:0}
+.foot{flex:none;background:#fff;padding:12px 16px 0;box-shadow:0 -1px 0 var(--line)}
+.home{height:34px;display:flex;align-items:flex-end;justify-content:center;padding-bottom:8px}
+.home i{width:134px;height:5px;border-radius:3px;background:#141A26;display:block}
+.home.light i{background:#fff}
+.btn{width:100%;height:52px;border-radius:14px;background:var(--blue);color:#fff;font-weight:700;font-size:16.5px;display:flex;align-items:center;justify-content:center;gap:8px}
+.btn:active{background:var(--blue-d)}
+.btn[disabled]{background:#C5CCDA;cursor:not-allowed}
+.btn.ghost{background:#fff;color:var(--blue);border:1.5px solid var(--blue)}
+.btn.text{background:none;color:var(--blue);height:44px;font-size:15px}
+.card{background:#fff;border-radius:16px;padding:14px 16px}
+.sec-t{font-size:13.5px;font-weight:700;color:var(--ink2);margin:18px 2px 8px}
+.sec-t:first-child{margin-top:0}
+.row{display:flex;align-items:center;gap:12px}
+.muted{color:var(--ink3)}
+.small{font-size:12.5px}
+.pill{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;font-weight:700;border-radius:999px;padding:2px 8px;white-space:nowrap}
+.pill.red{background:var(--red-l);color:var(--red)}
+.pill.green{background:var(--green-l);color:var(--green)}
+.pill.blue{background:var(--blue-l);color:var(--blue)}
+.hr{height:1px;background:var(--line);margin:10px 0}
+.kv{display:flex;justify-content:space-between;align-items:center;font-size:14.5px;padding:4px 0}
+.kv .k{color:var(--ink2)}
+.kv .v{font-weight:600}
+.kv.total .k{color:var(--ink);font-weight:700}
+.kv.total .v{font-size:18px;font-weight:700;color:var(--blue)}
+.note{display:flex;gap:8px;align-items:flex-start;font-size:13px;line-height:1.5;border-radius:12px;padding:10px 12px}
+.note svg{flex:none;margin-top:1px}
+.note.blue{background:var(--blue-l);color:#1A3F99}
+.note.green{background:var(--green-l);color:#11652F}
+.note.amber{background:var(--amber-l);color:#7A5213}
+.note.red{background:var(--red-l);color:#9E2A21}
+.trip{position:relative;padding-left:26px}
+.trip .pt{position:relative;padding:3px 0}
+.trip .pt::before{content:"";position:absolute;left:-22px;top:10px;width:12px;height:12px;border-radius:50%;box-sizing:border-box}
+.trip .pt.a::before{border:3.5px solid var(--blue);background:#fff}
+.trip .pt.b::before{background:#F05A28;border-radius:3px;transform:rotate(45deg);width:11px;height:11px}
+.trip .pt .l{font-size:11.5px;color:var(--ink3)}
+.trip .pt .n{font-size:15px;font-weight:600}
+.trip::before{content:"";position:absolute;left:9px;top:24px;bottom:24px;border-left:2px dashed #C9D0DE}
+
+/* payment list */
+.pm{display:flex;align-items:center;gap:12px;padding:12px 14px;background:#fff;border-radius:14px;border:1.5px solid transparent;width:100%;text-align:left;min-height:64px}
+.pm + .pm{margin-top:8px}
+.pm.on{border-color:var(--blue);background:var(--blue-ll)}
+.pm .t{font-size:15px;font-weight:600;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.pm .s{font-size:12.5px;color:var(--ink3);margin-top:1px}
+.pm .body{flex:1;min-width:0}
+.radio{width:22px;height:22px;border-radius:50%;border:2px solid #C3CAD8;flex:none;display:grid;place-items:center}
+.pm.on .radio{border-color:var(--blue)}
+.pm.on .radio::after{content:"";width:11px;height:11px;border-radius:50%;background:var(--blue)}
+.lg{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;flex:none;font-weight:800;font-size:14px;letter-spacing:-.02em}
+.addbtn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;height:50px;border-radius:14px;border:1.5px dashed #A9B6D3;color:var(--blue);font-weight:600;font-size:15px;background:#fff;margin-top:10px}
+.empty{font-size:13px;color:var(--ink3);background:#fff;border-radius:14px;padding:12px 14px;display:flex;gap:10px;align-items:center}
+
+/* form */
+.field{margin-bottom:12px}
+.field label{display:block;font-size:13px;font-weight:600;color:var(--ink2);margin-bottom:5px}
+.field input{width:100%;height:50px;border:1.5px solid var(--line);border-radius:12px;padding:0 14px;font-size:16px;background:#fff;outline:none;letter-spacing:.01em}
+.field input:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(21,85,223,.12)}
+.field.err input{border-color:var(--red)}
+.field .e{font-size:12px;color:var(--red);margin-top:4px;display:none}
+.field.err .e{display:block}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.chk{display:flex;align-items:center;gap:10px;font-size:14.5px;padding:10px 0;width:100%;text-align:left}
+.box{width:24px;height:24px;border-radius:7px;border:2px solid #C3CAD8;display:grid;place-items:center;flex:none;background:#fff}
+.box.on{background:var(--blue);border-color:var(--blue);color:#fff}
+.cc{aspect-ratio:1.586/1;border-radius:18px;background:#16285C;color:#fff;padding:18px 20px;position:relative;overflow:hidden;margin-bottom:16px;display:flex;flex-direction:column;justify-content:space-between;flex:none}
+.cc>*{position:relative;z-index:1}
+.cc::before{content:"";position:absolute;right:-60px;top:-70px;width:220px;height:220px;border-radius:50%;background:rgba(255,255,255,.06)}
+.cc::after{content:"";position:absolute;right:30px;bottom:-110px;width:220px;height:220px;border-radius:50%;background:rgba(255,255,255,.05)}
+.cc .chip{width:42px;height:31px;border-radius:6px;background:#D9B86A}
+.cc .num{font-size:21px;letter-spacing:.12em;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+.cc .bot{display:flex;justify-content:space-between;font-size:11px;color:rgba(255,255,255,.7)}
+.cc .bot b{display:block;font-size:13.5px;color:#fff;font-weight:600;letter-spacing:.03em;text-transform:uppercase;margin-top:1px;max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.brandtxt{font-weight:800;font-style:italic;letter-spacing:.02em}
+.acc{display:flex;gap:6px;align-items:center}
+.acc span{font-size:11px;font-weight:700;border:1px solid var(--line);border-radius:6px;padding:2px 7px;background:#fff;color:var(--ink2)}
+.demo-link{font-size:12.5px;color:var(--blue);font-weight:600;text-decoration:underline;text-underline-offset:2px}
+
+/* map */
+.map{position:absolute;left:0;right:0;top:0}
+.map svg{display:block;width:100%;height:100%}
+.floatbtn{position:absolute;width:44px;height:44px;border-radius:50%;background:#fff;display:grid;place-items:center;box-shadow:0 4px 14px rgba(20,26,38,.15);z-index:5}
+.chipbal{position:absolute;right:16px;top:53px;background:#fff;border-radius:999px;padding:8px 14px 8px 10px;display:flex;gap:6px;align-items:center;font-size:13.5px;font-weight:700;box-shadow:0 4px 14px rgba(20,26,38,.15);z-index:5}
+.sheet{position:absolute;left:0;right:0;bottom:0;background:var(--bg);border-radius:24px 24px 0 0;box-shadow:0 -8px 24px rgba(20,26,38,.10);display:flex;flex-direction:column;z-index:4}
+.grab{width:40px;height:5px;border-radius:3px;background:#D3D8E2;margin:8px auto 4px}
+.svc{display:flex;align-items:center;gap:12px}
+.svc .ico{width:46px;height:46px;border-radius:12px;background:var(--blue-l);display:grid;place-items:center;flex:none}
+
+/* overlays */
+.dim{position:absolute;inset:0;background:rgba(14,17,22,.45);z-index:30;display:flex;align-items:flex-end;animation:fade .2s}
+.modal{background:#fff;width:100%;border-radius:24px 24px 0 0;padding:8px 20px 0;animation:up .25s ease-out;max-height:92%;overflow:auto}
+.modal h3{font-size:18px;font-weight:700;margin:10px 0 4px}
+.dim.center{align-items:center;justify-content:center;background:rgba(255,255,255,.88)}
+.proc{background:#fff;border-radius:20px;padding:26px 24px;width:300px;box-shadow:0 20px 50px -10px rgba(20,26,38,.3);text-align:center}
+.spin{width:44px;height:44px;border-radius:50%;border:4px solid var(--blue-l);border-top-color:var(--blue);animation:rot .8s linear infinite;margin:0 auto 14px}
+.pstep{display:flex;align-items:center;gap:10px;text-align:left;font-size:14px;padding:6px 0;color:var(--ink3)}
+.pstep .d{width:22px;height:22px;border-radius:50%;border:2px solid #D3D8E2;display:grid;place-items:center;flex:none}
+.pstep.act{color:var(--ink);font-weight:600}
+.pstep.act .d{border-color:var(--blue);border-top-color:transparent;animation:rot .8s linear infinite}
+.pstep.ok{color:var(--green);font-weight:600}
+.pstep.ok .d{background:var(--green);border-color:var(--green);color:#fff}
+.toast{position:absolute;left:16px;right:16px;bottom:130px;z-index:40;background:#141A26;color:#fff;border-radius:14px;padding:12px 14px;font-size:14px;display:flex;gap:10px;align-items:center;animation:drop .25s}
+.bankopt{display:flex;align-items:center;gap:12px;width:100%;padding:12px;border-radius:12px;border:1.5px solid var(--line);text-align:left;font-weight:600;font-size:15px}
+.bankopt + .bankopt{margin-top:8px}
+.bankopt .lg{width:36px;height:36px;font-size:12px;color:#fff}
+@keyframes rot{to{transform:rotate(360deg)}}
+@keyframes fade{from{opacity:0}}
+@keyframes up{from{transform:translateY(40px);opacity:0}}
+@keyframes drop{from{transform:translateY(-10px);opacity:0}}
+.success-ic{width:84px;height:84px;border-radius:50%;background:var(--green);display:grid;place-items:center;margin:8px auto 14px;box-shadow:0 0 0 10px var(--green-l)}
+.qrbox{background:#fff;border-radius:16px;padding:14px;display:flex;gap:14px;align-items:center}
+.qrlock{width:76px;height:76px;border-radius:12px;background:var(--bg);display:grid;place-items:center;flex:none;color:var(--ink3);border:1.5px dashed #C9D0DE}
+
+/* dropdown */
+.ddfield{display:flex;align-items:center;gap:8px;width:100%;text-align:left;border-radius:10px}
+.ddfield .chev{margin-left:auto;color:var(--ink3);transition:transform .2s;flex:none;width:32px;height:32px;border-radius:8px;background:var(--bg);display:grid;place-items:center}
+.ddfield.open .chev{transform:rotate(180deg);color:var(--blue)}
+.ddlist{margin:6px 0 6px;border:1.5px solid var(--blue);border-radius:12px;overflow:hidden;background:#fff;box-shadow:0 8px 20px -8px rgba(21,85,223,.3)}
+.ddopt{display:flex;align-items:center;gap:10px;width:100%;padding:9px 12px;text-align:left;border-bottom:1px solid var(--line);min-height:48px}
+.ddopt:last-child{border-bottom:0}
+.ddopt.on{background:var(--blue-ll)}
+.ddopt[disabled]{opacity:.38;cursor:not-allowed}
+.ddopt .n{font-size:14px;font-weight:600;line-height:1.35}
+.ddopt .a{font-size:11.5px;color:var(--ink3)}
+/* chat */
+.chatwrap{position:absolute;inset:0;z-index:32;background:var(--bg);display:flex;flex-direction:column;animation:fade .2s}
+.msgs{flex:1;overflow-y:auto;padding:14px 14px 6px;display:flex;flex-direction:column;gap:8px}
+.bub{max-width:78%;padding:9px 13px;border-radius:18px;font-size:14.5px;line-height:1.45;background:#fff;align-self:flex-start;border-bottom-left-radius:6px}
+.bub.me{align-self:flex-end;background:var(--blue);color:#fff;border-bottom-left-radius:18px;border-bottom-right-radius:6px}
+.bub small{display:block;font-size:10.5px;opacity:.6;margin-top:2px;text-align:right}
+.typing{align-self:flex-start;background:#fff;border-radius:18px;padding:12px 14px;display:flex;gap:4px}
+.typing i{width:7px;height:7px;border-radius:50%;background:#AAB2C2;animation:blink 1s infinite}
+.typing i:nth-child(2){animation-delay:.15s}.typing i:nth-child(3){animation-delay:.3s}
+@keyframes blink{50%{opacity:.25}}
+.qr-chips{display:flex;gap:6px;overflow-x:auto;padding:6px 14px 8px}
+.qr-chips::-webkit-scrollbar{height:0}
+.qr-chips button{white-space:nowrap;font-size:13px;padding:7px 12px;border-radius:999px;background:#fff;border:1px solid var(--line);color:var(--ink2);font-weight:500}
+.chatin{display:flex;gap:8px;padding:8px 12px 0;background:#fff;border-top:1px solid var(--line)}
+.chatin input{flex:1;height:44px;border-radius:22px;border:1.5px solid var(--line);padding:0 16px;font-size:15px;outline:none;background:var(--bg)}
+.chatin input:focus{border-color:var(--blue)}
+.sendbtn{width:44px;height:44px;border-radius:50%;background:var(--blue);color:#fff;display:grid;place-items:center;flex:none}
+.badge{position:absolute;top:-4px;right:-4px;min-width:18px;height:18px;border-radius:9px;background:var(--red);color:#fff;font-size:11px;font-weight:700;display:grid;place-items:center;padding:0 5px;border:2px solid #fff}
+.drv{display:flex;align-items:center;gap:12px;background:#fff;border-radius:16px;padding:10px 12px 10px 14px}
+.avatar{width:40px;height:40px;border-radius:50%;background:#DCE6FB;color:var(--blue);display:grid;place-items:center;font-weight:700;flex:none}
+.chatbtn{position:relative;height:40px;padding:0 14px;border-radius:12px;background:var(--blue-l);color:var(--blue);font-weight:700;font-size:14px;display:flex;align-items:center;gap:6px;margin-left:auto}
+/* scanner */
+.scanwrap{position:absolute;inset:0;z-index:33;background:#0B0D12;color:#fff;display:flex;flex-direction:column;align-items:center;animation:fade .2s}
+.vf{width:250px;height:250px;position:relative;margin-top:70px;border-radius:24px;background:radial-gradient(circle at 50% 45%,#2A3140,#12151C)}
+.vf .cn{position:absolute;width:44px;height:44px;border:4px solid #fff}
+.vf .tl{top:-2px;left:-2px;border-right:0;border-bottom:0;border-radius:18px 0 0 0}
+.vf .tr{top:-2px;right:-2px;border-left:0;border-bottom:0;border-radius:0 18px 0 0}
+.vf .bl{bottom:-2px;left:-2px;border-right:0;border-top:0;border-radius:0 0 0 18px}
+.vf .br{bottom:-2px;right:-2px;border-left:0;border-top:0;border-radius:0 0 18px 0}
+.vf .line{position:absolute;left:18px;right:18px;height:3px;background:#4C8DFF;box-shadow:0 0 12px #4C8DFF;animation:scanl 1.6s ease-in-out infinite}
+@keyframes scanl{0%,100%{top:22px}50%{top:224px}}
+.sticker{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) rotate(-4deg);background:#fff;border-radius:12px;padding:8px 8px 4px;text-align:center;color:#141A26;font-size:10px;font-weight:700}
+.btn.danger{background:var(--red)}
+.btn.sm{height:42px;font-size:14.5px;border-radius:12px}
+.rad{display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:9px 2px;font-size:14.5px}
+.rad .radio{width:20px;height:20px}
+.rad.on .radio{border-color:var(--blue)}
+.rad.on .radio::after{content:"";width:10px;height:10px;border-radius:50%;background:var(--blue)}
+.noanim .dim,.noanim .modal,.noanim .chatwrap,.noanim .scanwrap{animation:none}
+.scanwrap .sb{width:100%}
+.amts{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.amt{height:58px;border-radius:12px;border:1.5px solid var(--line);font-weight:700;font-size:15.5px;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.2;background:#fff}
+.amt small{font-size:10.5px;font-weight:600;color:var(--green)}
+.amt.on{border-color:var(--blue);background:var(--blue-ll);color:var(--blue)}
+.tulink{display:flex;align-items:center;gap:6px;margin:6px 4px 10px auto;font-size:13.5px;font-weight:700;color:var(--blue);padding:4px 2px}
+@media (max-width:900px){.side{display:none} #preview{padding:12px 0}}
+/* Clean interactive presentation */
+#preview{flex-direction:column;align-items:center;justify-content:flex-start;gap:14px;padding:20px 16px 24px}
+#preview .side{display:none}
+.preview-reset{font-size:13px;color:var(--ink2);padding:9px 16px;border-radius:10px;background:#fff;border:1px solid var(--line);font-weight:600}
+@media(max-width:600px){.topbar{flex-wrap:wrap;gap:8px;padding:10px 12px}.topbar .seg{margin-left:0}.topbar .seg button{font-size:12px;padding:6px 10px}#preview{padding:10px 4px 16px;gap:10px}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div>
+    <h1>MuvMi · Direct Payment (Pay per Ride)</h1>
+    <div class="sub">Clickable Prototype — DX330 Design Thinking · HMW 3.1</div>
+  </div>
+  <span class="tag">ข้อมูลจำลองทั้งหมด · ไม่มีการตัดเงินจริง</span>
+  <div class="seg" role="tablist">
+    <button id="tabPreview" class="on" onclick="setMode('preview')">Interactive Preview</button>
+    <button id="tabOverview" onclick="setMode('overview')">Prototype Overview</button>
+  </div>
+</div>
+
+<section id="preview">
+  <div class="device" id="device"><div class="scr" id="phone"></div></div>
+  <aside class="side">
+    <h2>USER FLOW</h2>
+    <ol class="steps" id="steps"></ol>
+    <div class="explain" id="explain"></div>
+  </aside>
+  <button class="preview-reset" onclick="resetAll()">↺ เริ่มต้นใหม่</button>
+</section>
+
+<section id="overview">
+  <div class="ov-head">
+    <h2>Prototype Overview — Direct Payment (Pay per Ride)</h2>
+    <p>HMW: ช่วยให้ผู้ใช้งานสามารถชำระค่าโดยสารได้อย่างสะดวก รวดเร็ว และมีความยืดหยุ่นมากขึ้นได้อย่างไร? · 6 หน้าจอหลัก · 390 × 844 px</p>
+    <div class="ov-tools">ขนาดแสดงผล:
+      <button data-z="0.6">60%</button><button data-z="0.8">80%</button><button data-z="1" class="on">100%</button>
+    </div>
+  </div>
+  <div id="ovWrap"><div class="ov-grid" id="ovGrid"></div></div>
+</section>
+
+<script>
+/* ================= ICONS ================= */
+const I = {
+  back:'<path d="M15 18l-6-6 6-6"/>',
+  menu:'<path d="M4 7h16M4 12h16M4 17h16"/>',
+  wallet:'<rect x="3" y="6" width="18" height="14" rx="3"/><path d="M16 13h2M3 10h18M6 6l9-3 2 3"/>',
+  card:'<rect x="3" y="5.5" width="18" height="13" rx="2.5"/><path d="M3 10h18M7 15h3"/>',
+  bank:'<path d="M3 10l9-6 9 6M5 10v8M9.5 10v8M14.5 10v8M19 10v8M3 20h18"/>',
+  qr:'<rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><path d="M14 14h2v2h-2zM18 18h2v2h-2zM14 18h2M18 14h2"/>',
+  check:'<path d="M5 12.5l4.5 4.5L19 7.5"/>',
+  lock:'<rect x="5" y="11" width="14" height="10" rx="2.5"/><path d="M8 11V8a4 4 0 018 0v3"/>',
+  shield:'<path d="M12 3l8 3v6c0 4.5-3.4 8.2-8 9-4.6-.8-8-4.5-8-9V6l8-3z"/><path d="M8.5 12l2.5 2.5 4.5-5"/>',
+  info:'<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/>',
+  alert:'<path d="M12 4l9 16H3l9-16z"/><path d="M12 10v4M12 17v.5"/>',
+  plus:'<path d="M12 5v14M5 12h14"/>',
+  x:'<path d="M6 6l12 12M18 6L6 18"/>',
+  clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  user:'<circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4.5-6 8-6s7 2 8 6"/>',
+  receipt:'<path d="M6 3h12v18l-3-2-3 2-3-2-3 2V3z"/><path d="M9 8h6M9 12h6"/>',
+  chev:'<path d="M9 6l6 6-6 6"/>',
+  phone:'<rect x="6" y="2.5" width="12" height="19" rx="3"/><path d="M11 18.5h2"/>',
+  pin:'<path d="M12 21s-7-6.2-7-11.5A7 7 0 0119 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/>',
+  tuk:'<path d="M4 16V9a3 3 0 013-3h7l4 5h1.5a1.5 1.5 0 011.5 1.5V16"/><path d="M4 11h14M10 6v5"/><circle cx="7.5" cy="17" r="2"/><circle cx="17" cy="17" r="2"/>',
+  swap:'<path d="M7 4L3 8l4 4M3 8h14M17 20l4-4-4-4M21 16H7"/>',
+  chevd:'<path d="M6 9l6 6 6-6"/>',
+  chat:'<path d="M4 5h16v11H9l-5 4V5z"/><path d="M8 9.5h8M8 12.5h5"/>',
+  send:'<path d="M4 12l16-8-6 16-2.5-6.5L4 12z"/>',
+  scan:'<path d="M4 8V5a1 1 0 011-1h3M16 4h3a1 1 0 011 1v3M20 16v3a1 1 0 01-1 1h-3M8 20H5a1 1 0 01-1-1v-3M4 12h16"/>',
+  refund:'<path d="M4 9h11a5 5 0 010 10H9"/><path d="M8 5L4 9l4 4"/>',
+  globe:'<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.5 3 14.5 0 18M12 3c-3 3.5-3 14.5 0 18"/>'
+};
+const ic=(n,s=22,w=2,c='currentColor')=>`<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="${c}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round">${I[n]}</svg>`;
+
+/* ================= DATA ================= */
+const DISC=0;
+const PLACES=[
+ {name:'Siam Paragon',short:'Siam Paragon',th:'สยามพารากอน · BTS สยาม',xy:[0,0]},
+ {name:'Chulalongkorn University',short:'Chulalongkorn Univ.',th:'จุฬาลงกรณ์มหาวิทยาลัย',xy:[0.1,-1.1]},
+ {name:'Samyan Mitrtown',short:'Samyan Mitrtown',th:'สามย่านมิตรทาวน์ · MRT สามย่าน',xy:[0.3,-1.9]},
+ {name:'Banthat Thong Road',short:'Banthat Thong',th:'ถนนบรรทัดทอง',xy:[-0.5,-0.9]},
+ {name:'MRT Sanam Chai',short:'MRT Sanam Chai',th:'สถานี MRT สนามไชย',xy:[-4.6,-1.3]},
+ {name:'Thammasat University (Tha Prachan)',short:'Thammasat Tha Prachan',th:'มหาวิทยาลัยธรรมศาสตร์ ท่าพระจันทร์',xy:[-4.9,0.4]}
+];
+function fare(st){const a=PLACES[st.from].xy,b=PLACES[st.to].xy;const d=Math.hypot(a[0]-b[0],a[1]-b[1])*1.3;return Math.max(30,Math.round((30+12*d)/5)*5);}
+const walletOK=st=>st.wallet>=fare(st);
+const baht=(n,d=2)=>'฿'+n.toFixed(d);
+const METHODS={
+  wallet:{name:'MuvMi Wallet',sub:'ยอดคงเหลือ ฿10.00',logo:()=>`<div class="lg" style="background:var(--blue-l);color:var(--blue)">${ic('wallet',22)}</div>`},
+  newcard:{name:'Credit / Debit Card',sub:'Visa, Mastercard',logo:()=>`<div class="lg" style="background:#EDEFF5;color:#16285C">${ic('card',22)}</div>`},
+  mbank:{name:'Mobile Banking',sub:'ยืนยันการชำระในแอปธนาคารของคุณ',logo:()=>`<div class="lg" style="background:#E6F5EC;color:#138A43">${ic('bank',22)}</div>`},
+  promptpay:{name:'PromptPay',sub:'QR ตามยอดจริง ไม่ต้องบันทึกรูป',logo:()=>`<div class="lg" style="background:#E6EDF7;color:#123E7A">${ic('qr',22)}</div>`},
+  truemoney:{name:'TrueMoney Wallet',sub:'เชื่อมบัญชีและยืนยันในแอป',logo:()=>`<div class="lg" style="background:#FFEFE3;color:#E8651A">TM</div>`},
+  alipay:{name:'Alipay',sub:'For international travelers',logo:()=>`<div class="lg" style="background:#E5F0FF;color:#1677FF">A</div>`}
+};
+const BANKS=[['SCB','#4E2A84'],['KBank','#138F2D'],['Bangkok Bank','#1E4598'],['Krungthai','#00A6E6']];
+const STEPS=['Ride Booking','Select Payment Method','Add Payment Method','Review & Confirm Booking','Payment & Booking Successful','Ride Tracking'];
+const EXPL=[
+ {t:'หน้าจอเรียกรถ (Ride Booking)',
+  a:'แสดงแผนที่และเส้นทาง ผู้ใช้กดเลือกจุดรับและจุดส่งจาก Dropdown ได้ เช่น Siam Paragon, จุฬาฯ, สามย่านมิตรทาวน์, บรรทัดทอง, MRT สนามไชย, ธรรมศาสตร์ ท่าพระจันทร์ ค่าโดยสารคำนวณใหม่ตามเส้นทาง (ตัวอย่างหลัก: Siam Paragon → จุฬาฯ บริการ Saver 1 คน ฿45)',
+  b:'เดิมเมื่อยอดใน Wallet (฿10) ไม่พอ ผู้ใช้ต้องออกไปเติมเงินขั้นต่ำ บันทึก QR แล้วสลับไปแอปธนาคาร ตอนนี้ระบบเพียงแจ้งยอดไม่พอเป็นข้อความสั้น ๆ และให้เลือกช่องทางอื่นได้ทันทีในหน้าเดิม',
+  c:'เพิ่มส่วน “ช่องทางการชำระเงิน” เข้าไปในหน้าเรียกรถ ผู้ใช้จึงชำระค่าโดยสารตามยอดจริงได้เลย ไม่ต้องเติมเงินเข้า Wallet ก่อน'},
+ {t:'เลือกช่องทางการชำระเงิน',
+  a:'รวมช่องทางชำระเงิน 6 ช่องทาง แสดงยอดชำระ ฿45.00 ชัดเจน พร้อมส่วนช่องทางที่บันทึกไว้ และปุ่มเพิ่มบัตรเครดิต/เดบิต',
+  b:'เพิ่มบัตร Mobile Banking, PromptPay, TrueMoney และ Alipay ให้ผู้ใช้ที่ใช้นาน ๆ ครั้งและนักท่องเที่ยวต่างชาติ ส่วนผู้ที่ยังอยากใช้ MuvMi Wallet เติมเงินได้ในหน้านี้เลย ไม่มียอดขั้นต่ำ เลือกเติมเท่าที่ขาดได้ และจ่ายผ่าน PromptPay ในแอปโดยไม่ต้องบันทึก QR หรือสลับแอป',
+  c:'ทุกช่องทางเรียกเก็บเฉพาะค่าโดยสารจริง ข้อความ “ชำระค่าโดยสารตามยอดจริง โดยไม่ต้องเติมเงินล่วงหน้า” ย้ำแนวคิด Pay per Ride'},
+ {t:'เพิ่มบัตรเครดิต/เดบิต',
+  a:'ฟอร์มกรอกชื่อผู้ถือบัตร เลขบัตร วันหมดอายุ และ CVV พร้อมภาพบัตรที่เปลี่ยนตามข้อมูลที่พิมพ์ และตรวจข้อมูลก่อนกดเพิ่มบัตร',
+  b:'ผู้ใช้เลือกได้ว่าจะบันทึกบัตรไว้ หรือใช้แค่เที่ยวนี้ มีข้อความเรื่องความปลอดภัยให้มั่นใจ ถ้าบันทึกไว้ ครั้งหน้าข้ามหน้านี้ไปได้เลย',
+  c:'เป็นฟีเจอร์ Saved Payment Methods ที่ช่วยให้การจ่ายตรงต่อเที่ยวเร็วขึ้นในครั้งต่อไป'},
+ {t:'ตรวจสอบและยืนยันการเรียกรถ',
+  a:'สรุปเส้นทาง บริการ จำนวนผู้โดยสาร ช่องทางชำระเงิน และยอดชำระ ฿45.00 ก่อนกดยืนยันครั้งสุดท้าย',
+  b:'เห็นยอดที่จะถูกเรียกเก็บและช่องทางชำระชัดเจน กด “เปลี่ยน” ได้ทันที ระหว่างประมวลผลกดปุ่มซ้ำไม่ได้ จึงไม่ถูกตัดเงินซ้ำ',
+  c:'รวมการเรียกรถกับการชำระเงินไว้ในขั้นตอนเดียว ไม่ต้องเติมเงินเข้า Wallet ก่อน'},
+ {t:'ชำระเงินและเรียกรถสำเร็จ',
+  a:'ยืนยันว่าชำระเงินแล้วและเรียกรถแล้ว พร้อมยอดชำระ ช่องทาง เลขที่การจอง และสถานะทั้งสองส่วน',
+  b:'แยกสถานะการชำระเงินกับสถานะการจองให้เห็นชัด ลดความกังวลเรื่องธุรกรรมผิดพลาดที่ผู้ใช้เคยเจอตอนเติมเงิน',
+  c:'แสดงว่ายอดใน MuvMi Wallet ยังเป็น ฿10.00 เหมือนเดิม ยืนยันว่าเรียกรถได้โดยไม่ต้องเติมเงิน'},
+ {t:'ติดตามสถานะรถ',
+  a:'แสดงตำแหน่งรถ เวลาที่รถจะมาถึง (5 นาที) หมายเลขรถ จุดรับ-ส่ง สถานะชำระเงิน ปุ่มแชตกับคนขับ ปุ่มสแกน QR Code บนตัวรถเมื่อรถมาถึง และปุ่มยกเลิกการเรียกรถ',
+  b:'คงขั้นตอนเดิมที่ผู้โดยสารเป็นคนสแกน QR บนรถเพื่อยืนยันว่าขึ้นถูกคัน เพิ่มแชต Real-time กับคนขับเพื่อนัดจุดรับ และยกเลิกได้โดยไม่มีค่าธรรมเนียมก่อนขึ้นรถ เมื่อรอนานหรือเปลี่ยนใจ',
+  c:'จ่ายครบก่อนขึ้นรถ ตอนสแกน QR จึงไม่มีขั้นตอนชำระเพิ่ม ถ้ายกเลิก ระบบคืนเงินตามยอดจริงกลับช่องทางเดิม (PromptPay เลือกรับเข้า Wallet ทันทีได้) เงินจึงไม่ค้างใน Wallet โดยไม่ตั้งใจ'}
+];
+
+/* ================= STATE ================= */
+function fresh(){return{screen:1,hist:[],method:'wallet',card:null,saved:[],sel:null,from:0,to:1,dd:null,wallet:10,
+  boarded:false,msgs:initMsgs(0),typing:false,unread:1,cReason:null,refundTo:'source',procKind:'pay',cancelled:null,tu:{amt:35,src:'promptpay'},
+  form:{name:'',num:'',exp:'',cvv:'',save:true},touched:false,
+  modal:null,proc:null,ref:null,paidAt:null,arrived:false,toast:null};}
+function initMsgs(from){return[{me:false,t:`สวัสดีครับ ผมสมศักดิ์ คนขับ MuvMi #127 กำลังไปรับที่ ${PLACES[from].short} ครับ`,time:'09:41'}];}
+let S=fresh();
+const cardLabel=c=>`${c.brand} •••• ${c.last4}`;
+function methodLabel(st=S){return st.method==='card'&&st.card?cardLabel(st.card):METHODS[st.method].name;}
+function methodLogo(st=S){return st.method==='card'?METHODS.newcard.logo():METHODS[st.method].logo();}
+
+/* ================= MAP ================= */
+function mapSVG(mode,h,opts={}){
+  const st=opts.st||{from:0,to:1};const lw=t=>Math.round(t.length*6.4+22);const A=PLACES[st.from].short,B=PLACES[st.to].short;
+  // mode: 'booking' | 'track'
+  const roads=`
+  <rect width="390" height="${h}" fill="#EEF1F5"/>
+  <g fill="#E2E6EC">
+    <rect x="10" y="20" width="80" height="100" rx="6"/><rect x="140" y="20" width="110" height="105" rx="6"/>
+    <rect x="300" y="20" width="80" height="100" rx="6"/><rect x="10" y="180" width="80" height="90" rx="6"/>
+    <rect x="140" y="180" width="110" height="70" rx="6"/><rect x="300" y="180" width="80" height="120" rx="6"/>
+    <rect x="10" y="320" width="80" height="140" rx="6"/><rect x="300" y="330" width="80" height="130" rx="6"/>
+  </g>
+  <rect x="140" y="275" width="110" height="200" rx="8" fill="#D7EED9"/>
+  <rect x="150" y="30" width="90" height="85" rx="5" fill="#D9E3F6"/>
+  <g stroke="#fff" stroke-linecap="round">
+    <path d="M0 150H390" stroke-width="22"/>
+    <path d="M115 0V${h}" stroke-width="18"/>
+    <path d="M275 0V${h}" stroke-width="16"/>
+    <path d="M0 305H390" stroke-width="10"/>
+    <path d="M115 255H275" stroke-width="8"/>
+  </g>
+  <path d="M0 150H390" stroke="#58B368" stroke-width="3" stroke-dasharray="1 0" opacity=".55"/>
+  <g font-size="9.5" fill="#8A92A3" font-family="inherit">
+    <text x="20" y="145">ถ.พระราม 1</text>
+    <text x="121" y="${h-40}" transform="rotate(90 121 ${h-40})">ถ.พญาไท</text>
+    <text x="281" y="200" transform="rotate(90 281 200)">ถ.อังรีดูนังต์</text>
+    <text x="320" y="300">ถ.พระราม 4 ↓</text>
+  </g>
+  <g><rect x="62" y="136" width="54" height="16" rx="8" fill="#fff"/><circle cx="71" cy="144" r="4" fill="#58B368"/><text x="78" y="148" font-size="9" font-weight="700" fill="#2E7D3C">BTS สยาม</text></g>
+  <text x="195" y="400" text-anchor="middle" font-size="10" fill="#4C8F57" font-weight="600">จุฬาลงกรณ์มหาวิทยาลัย</text>`;
+  let route,pins='',veh='';
+  const pick=`<g transform="translate(220 132)"><circle r="16" fill="rgba(21,85,223,.18)"/><circle r="9" fill="#fff"/><circle r="6" fill="#1555DF"/></g>
+    <g transform="translate(${Math.min(372-lw(A),Math.max(16,220-lw(A)/2))} 98)"><rect width="${lw(A)}" height="24" rx="12" fill="#fff" stroke="#E4E7EE"/><text x="${lw(A)/2}" y="16" text-anchor="middle" font-size="11" font-weight="700" fill="#141A26">${A}</text></g>`;
+  if(mode==='booking'){
+    route=`<path d="M220 140 V150 H275 V226 H215" fill="none" stroke="#fff" stroke-width="9" stroke-linejoin="round" stroke-linecap="round"/>
+           <path d="M220 140 V150 H275 V226 H215" fill="none" stroke="#1555DF" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/>`;
+    pins=pick+`<g transform="translate(212 232)"><path d="M0 0c-9-10-14-16-14-23a14 14 0 0128 0c0 7-5 13-14 23z" transform="translate(0 0)" fill="#F05A28"/><circle cy="-23" r="5" fill="#fff"/></g>
+      <g transform="translate(${Math.max(8,194-lw(B))} 196)"><rect width="${lw(B)}" height="24" rx="12" fill="#fff" stroke="#E4E7EE"/><text x="${lw(B)/2}" y="16" text-anchor="middle" font-size="11" font-weight="700" fill="#141A26">${B}</text></g>`;
+  } else {
+    const p='M380 150 H275 V150 H220 V140';
+    route=`<path d="${p}" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+           <path d="${p}" fill="none" stroke="#1555DF" stroke-width="5" stroke-linecap="round" stroke-dasharray="2 9" stroke-linejoin="round"/>`;
+    pins=pick;
+    const tukG=`<g><circle r="19" fill="#1555DF" stroke="#fff" stroke-width="3"/><g transform="translate(-11 -11)" stroke="#fff" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><svg width="22" height="22" viewBox="0 0 24 24">${I.tuk}</svg></g></g>`;
+    if(opts.animate && !opts.arrived){
+      veh=`<g>${tukG}<animateMotion dur="40s" fill="freeze" path="M360 150 H220 V142" keyPoints="0;0.55" keyTimes="0;1" calcMode="linear"/></g>`;
+    } else {
+      const x=opts.arrived?236:330;
+      veh=`<g transform="translate(${x} 150)">${tukG}</g>`;
+    }
+  }
+  return `<svg viewBox="0 0 390 ${h}" preserveAspectRatio="xMidYMid slice">${roads}${route}${pins}${veh}</svg>`;
+}
+
+/* ================= SCREEN PARTS ================= */
+const statusBar=(light)=>`<div class="sb ${light?'light':''}"><span>9:41</span><span class="ic">
+ <svg width="18" height="12" viewBox="0 0 18 12" fill="currentColor"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="5.5" width="3" height="6.5" rx="1"/><rect x="10" y="3" width="3" height="9" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1"/></svg>
+ <svg width="16" height="12" viewBox="0 0 16 12" fill="currentColor"><path d="M8 2.2c2.4 0 4.6.9 6.2 2.5l1.2-1.2C13.4 1.4 10.8.4 8 .4S2.6 1.4.6 3.5l1.2 1.2C3.4 3.1 5.6 2.2 8 2.2zm0 3.4c1.5 0 2.8.6 3.8 1.5L13 5.9c-1.3-1.3-3.1-2.1-5-2.1s-3.7.8-5 2.1l1.2 1.2c1-.9 2.3-1.5 3.8-1.5zM8 9l2-2a2.8 2.8 0 00-4 0l2 2z"/><circle cx="8" cy="10.5" r="1.4"/></svg>
+ <svg width="27" height="13" viewBox="0 0 27 13" fill="none"><rect x=".5" y=".5" width="23" height="12" rx="3.5" stroke="currentColor" opacity=".4"/><rect x="2" y="2" width="18" height="9" rx="2" fill="currentColor"/><path d="M25 4.5v4c.8-.3 1.3-1.1 1.3-2s-.5-1.7-1.3-2z" fill="currentColor" opacity=".45"/></svg>
+ </span></div>`;
+const home=(l)=>`<div class="home ${l?'light':''}"><i></i></div>`;
+const header=(title,back=true,right='')=>`<div class="hdr">${back?`<button class="iconbtn" data-a="back" aria-label="ย้อนกลับ">${ic('back',24,2.4)}</button>`:'<span style="width:44px"></span>'}<h2>${title}</h2><span style="margin-left:auto">${right}</span></div>`;
+const tripBlock=(st)=>`<div class="trip"><div class="pt a"><div class="l">จุดรับ</div><div class="n">${PLACES[st.from].name}</div></div><div class="pt b"><div class="l">จุดส่ง</div><div class="n">${PLACES[st.to].name}</div></div></div>`;
+function tripPick(st){
+  const f=(k,label,cls)=>{const p=PLACES[st[k]];const open=st.dd===k;const other=st[k==='from'?'to':'from'];
+    const list=open?`<div class="ddlist">${PLACES.map((q,i)=>`<button class="ddopt ${i===st[k]?'on':''}" data-a="pick" data-k="${k}" data-i="${i}" ${i===other?'disabled':''}>${ic('pin',18,2,i===st[k]?'#1555DF':'#8A92A3')}<div style="min-width:0"><div class="n">${q.name}</div><div class="a">${i===other?'เลือกเป็น'+(k==='from'?'จุดส่ง':'จุดรับ')+'แล้ว':q.th}</div></div>${i===st[k]?`<span style="margin-left:auto;color:var(--blue)">${ic('check',18,2.6)}</span>`:''}</button>`).join('')}</div>`:'';
+    return `<div class="pt ${cls}"><button class="ddfield ${open?'open':''}" data-a="dd" data-k="${k}" aria-expanded="${open}"><div style="min-width:0"><div class="l">${label}</div><div class="n">${p.name}</div></div><span class="chev">${ic('chevd',18,2.4)}</span></button>${list}</div>`;};
+  return `<div class="trip">${f('from','จุดรับ','a')}${f('to','จุดส่ง','b')}</div>`;
+}
+
+/* ===== Screen 1 ===== */
+function scr1(st){
+  const ok=st.method!=='wallet'||walletOK(st);
+  const pay = ok
+   ? `<div class="row" style="padding:2px 0">${methodLogo(st)}<div style="flex:1"><div style="font-weight:600;font-size:15px">${methodLabel(st)}</div><div class="small" style="color:var(--green);font-weight:600">ชำระตามยอดจริง ${baht(fare(st))}</div></div><button class="pill blue" style="font-size:13px;padding:6px 12px" data-a="go2">เปลี่ยน</button></div>`
+   : `<div class="row">${METHODS.wallet.logo()}<div style="flex:1"><div style="font-weight:600;font-size:15px">MuvMi Wallet</div><div class="small muted">ยอดคงเหลือ ${baht(st.wallet)}</div></div><span class="pill red">${ic('alert',12,2.4)} ยอดเงินไม่เพียงพอ</span></div>
+      <div class="small" style="color:var(--ink2);margin:8px 0 10px;line-height:1.5">ไม่ต้องเติมเงิน — เลือกช่องทางอื่นเพื่อชำระค่าโดยสารตามยอดจริงได้ทันที</div>
+      <button class="btn ghost" style="height:44px;font-size:15px" data-a="go2">${ic('card',18)} เลือกช่องทางการชำระเงิน</button>`;
+  return `<div class="screen">
+   <div class="map" style="height:300px">${mapSVG('booking',300,{st})}</div>
+   ${statusBar()}
+   <button class="floatbtn" style="left:16px;top:53px" aria-label="เมนู">${ic('menu',22)}</button>
+   <div class="chipbal">${ic('wallet',18,2,'#1555DF')} ${baht(st.wallet)}</div>
+   <div class="sheet" style="top:252px">
+     <div class="grab"></div>
+     <div class="content" data-scroll style="padding:6px 16px 8px">
+       <div class="card" style="padding:12px 16px">${tripPick(st)}</div>
+       <div class="card" style="margin-top:8px;padding:10px 14px">
+         <div class="svc"><div class="ico">${ic('tuk',26,2,'#1555DF')}</div>
+          <div style="flex:1"><div style="font-weight:700;font-size:15.5px">Saver <span class="pill blue" style="margin-left:4px">Ride-sharing</span></div><div class="small muted">${ic('user',13,2)} ผู้โดยสาร 1 คน</div></div>
+          <div style="text-align:right"><div style="font-weight:700;font-size:16px">${baht(fare(st),0)}</div><div class="small muted">ค่าโดยสารโดยประมาณ</div></div></div>
+         <div class="hr" style="margin:8px 0 4px"></div>
+         <div class="kv" style="font-size:13.5px;padding:2px 0"><span class="k">ส่วนลดโปรโมชั่น</span><span class="v">${baht(DISC,0)}</span></div>
+         <div class="kv total" style="padding:2px 0"><span class="k">ค่าโดยสารรวม</span><span class="v">${baht(fare(st)-DISC,0)}</span></div>
+       </div>
+       <div class="card" style="margin-top:8px;padding:12px 14px">
+         <div style="font-size:13.5px;font-weight:700;color:var(--ink2);margin-bottom:8px">ช่องทางการชำระเงิน</div>${pay}
+       </div>
+     </div>
+     <div class="foot"><button class="btn" data-a="book">ยืนยันการเรียกรถ</button>${home()}</div>
+   </div>
+  </div>`;
+}
+
+/* ===== Screen 2 ===== */
+function scr2(st){
+  const sel=st.sel??(st.method==='card'?(st.card&&st.card.saved?'saved'+st.saved.indexOf(st.card):'newcard'):st.method);
+  const row=(key,m,extra='')=>`<button class="pm ${sel===key?'on':''}" data-a="sel" data-k="${key}">${m.logo()}<div class="body"><div class="t">${m.name}${extra}</div><div class="s">${key==='wallet'?'ยอดคงเหลือ '+baht(st.wallet):m.sub}</div></div><span class="radio"></span></button>`;
+  const wOK=walletOK(st);
+  const saved = st.saved.length
+    ? st.saved.map((c,i)=>`<button class="pm ${sel==='saved'+i?'on':''}" data-a="sel" data-k="saved${i}">${METHODS.newcard.logo()}<div class="body"><div class="t">${cardLabel(c)} <span class="pill green">บันทึกไว้</span></div><div class="s">ชำระได้ทันที ไม่ต้องกรอกข้อมูลใหม่</div></div><span class="radio"></span></button>`).join('')
+    : `<div class="empty">${ic('card',20,2,'#8A92A3')}<span>ยังไม่มีช่องทางที่บันทึกไว้ — บันทึกบัตรไว้ เพื่อครั้งหน้าชำระได้ในขั้นตอนเดียว</span></div>`;
+  const walletWarn = sel==='wallet'&&!wOK ? `<div class="note red" style="margin-top:8px">${ic('alert',16,2.2)}<div>ยอดใน Wallet ขาดอีก ${baht(fare(st)-st.wallet)} — เติมเงินเฉพาะยอดที่ขาด หรือเลือกบัตร, PromptPay และช่องทางอื่นเพื่อชำระตามยอดจริง <b>โดยไม่ต้องเติมเงิน</b></div></div>`:'';
+  let cta='ยืนยันช่องทางการชำระเงิน', dis=false;
+  if(sel==='wallet'&&!wOK){dis=true;cta='ยอดเงินใน Wallet ไม่เพียงพอ';}
+  if(!sel){dis=true;}
+  return `<div class="screen">${statusBar()}${header('เลือกช่องทางการชำระเงิน')}
+   <div class="content" data-scroll>
+     <div class="card" style="text-align:center;padding:16px">
+       <div class="small muted">ยอดชำระค่าโดยสาร</div>
+       <div style="font-size:34px;font-weight:700;color:var(--ink);line-height:1.3">${baht(fare(st))}</div>
+       <div class="note green" style="justify-content:center;margin-top:8px;padding:8px 10px">${ic('check',16,2.6)}<span>ชำระค่าโดยสารตามยอดจริง โดยไม่ต้องเติมเงินล่วงหน้า</span></div>
+     </div>
+     <div class="sec-t">ช่องทางที่บันทึกไว้</div>${saved}
+     <div class="sec-t">ช่องทางการชำระเงินทั้งหมด</div>
+     ${row('wallet',METHODS.wallet,wOK?'':` <span class="pill red">ยอดเงินไม่เพียงพอ</span>`)}${walletWarn}<button class="tulink" data-a="topup">${ic('plus',16,2.6)} เติมเงินเข้า MuvMi Wallet</button>
+     ${row('newcard',METHODS.newcard)}${row('mbank',METHODS.mbank)}${row('promptpay',METHODS.promptpay)}${row('truemoney',METHODS.truemoney)}${row('alipay',METHODS.alipay)}
+     <button class="addbtn" data-a="addcard">${ic('plus',20,2.4)} เพิ่มบัตรเครดิต/เดบิต</button>
+     <div style="height:8px"></div>
+   </div>
+   <div class="foot"><button class="btn" data-a="confirmPM" ${dis?'disabled':''}>${cta}</button>${home()}</div></div>`;
+}
+
+/* ===== Screen 3 ===== */
+function detectBrand(num){const d=num.replace(/\D/g,'');return d[0]==='5'||d[0]==='2'?'Mastercard':'Visa';}
+function fmtNum(v){return v.replace(/\D/g,'').slice(0,16).replace(/(.{4})/g,'$1 ').trim();}
+function fmtExp(v){const d=v.replace(/\D/g,'').slice(0,4);return d.length>2?d.slice(0,2)+'/'+d.slice(2):d;}
+function validate(f){
+  const e={};const d=f.num.replace(/\D/g,'');
+  if(f.name.trim().length<2)e.name='กรุณากรอกชื่อผู้ถือบัตร';
+  if(d.length!==16)e.num='กรุณากรอกหมายเลขบัตร 16 หลัก';
+  const m=f.exp.match(/^(\d{2})\/(\d{2})$/);
+  if(!m||+m[1]<1||+m[1]>12)e.exp='รูปแบบ ดด/ปป';
+  else if(+('20'+m[2])<2026||(+('20'+m[2])===2026&&+m[1]<11))e.exp='บัตรหมดอายุแล้ว';
+  if(!/^\d{3}$/.test(f.cvv))e.cvv='3 หลัก';
+  return e;
+}
+function ccPreview(f){
+  const d=f.num.replace(/\D/g,'');const shown=(d+'•'.repeat(16-d.length)).replace(/(.{4})/g,'$1 ').trim();
+  return `<div class="row" style="justify-content:space-between;position:relative;z-index:1"><span style="font-size:12px;opacity:.7">Credit / Debit</span><span class="brandtxt" id="ccBrand" style="font-size:18px">${d?detectBrand(d).toUpperCase():'CARD'}</span></div>
+   <div class="chip"></div><div class="num" id="ccNum">${shown}</div>
+   <div class="bot"><div>ชื่อผู้ถือบัตร<b id="ccName">${f.name||'YOUR NAME'}</b></div><div style="text-align:right">หมดอายุ<b id="ccExp">${f.exp||'MM/YY'}</b></div></div>`;
+}
+function scr3(st){
+  const f=st.form;const e=st.touched?validate(f):{};
+  const fld=(id,label,ph,val,mode,extra='')=>`<div class="field ${e[id]?'err':''}" id="f_${id}"><label for="in_${id}">${label}</label><input id="in_${id}" data-f="${id}" placeholder="${ph}" value="${val}" inputmode="${mode}" autocomplete="off" ${extra}><div class="e">${e[id]||''}</div></div>`;
+  return `<div class="screen">${statusBar()}${header('เพิ่มบัตรเครดิต/เดบิต')}
+   <div class="content" style="background:#fff">
+     <div class="cc">${ccPreview(f)}</div>
+     <div class="row" style="justify-content:space-between;margin-bottom:12px"><div class="acc"><span class="small muted" style="border:0;padding:0;font-weight:500">รองรับ</span><span class="brandtxt" style="color:#1A1F71">VISA</span><span>Mastercard</span></div>
+       <button class="demo-link" data-a="demofill">ใช้ข้อมูลบัตรทดลอง</button></div>
+     ${fld('name','ชื่อผู้ถือบัตร (ตามที่ระบุบนบัตร)','เช่น SOMCHAI JAIDEE',f.name,'text','autocapitalize="characters"')}
+     ${fld('num','หมายเลขบัตร','0000 0000 0000 0000',f.num,'numeric','maxlength="19"')}
+     <div class="grid2">${fld('exp','วันหมดอายุ','ดด/ปป',f.exp,'numeric','maxlength="5"')}${fld('cvv','CVV / CVC','3 หลัก',f.cvv,'numeric','maxlength="3" type="password"')}</div>
+     <button class="chk" data-a="togglesave"><span class="box ${f.save?'on':''}">${f.save?ic('check',16,3):''}</span><span>บันทึกบัตรสำหรับการใช้งานครั้งถัดไป</span></button>
+     <div class="small muted" style="margin:-4px 0 12px 34px;line-height:1.5">${f.save?'ครั้งถัดไปเลือกบัตรนี้ได้ทันที ไม่ต้องกรอกใหม่':'ใช้บัตรนี้เฉพาะการเดินทางครั้งนี้ ระบบจะไม่จัดเก็บข้อมูลบัตร'}</div>
+     <div class="note blue">${ic('lock',16,2.2)}<div>ข้อมูลบัตรถูกเข้ารหัสอย่างปลอดภัย และจะเรียกเก็บเงินตามค่าโดยสารจริงเมื่อคุณยืนยันการเรียกรถเท่านั้น</div></div>
+   </div>
+   <div class="foot"><button class="btn" data-a="addCardSubmit">เพิ่มบัตร</button>${home()}</div></div>`;
+}
+
+/* ===== Screen 4 ===== */
+function scr4(st){
+  const once = st.method==='card' && st.card && !st.card.saved;
+  return `<div class="screen">${statusBar()}${header('ตรวจสอบและยืนยัน')}
+   <div class="content">
+     <div class="card">${tripBlock(st)}
+       <div class="hr"></div>
+       <div class="kv"><span class="k">${ic('tuk',16,2)} ประเภทบริการ</span><span class="v">Saver</span></div>
+       <div class="kv"><span class="k">${ic('user',16,2)} จำนวนผู้โดยสาร</span><span class="v">1 คน</span></div>
+     </div>
+     <div class="sec-t">ช่องทางการชำระเงิน</div>
+     <div class="card row" style="padding:12px 14px">${methodLogo(st)}<div style="flex:1;min-width:0"><div style="font-weight:600;font-size:15.5px">${methodLabel(st)}</div><div class="small muted">${once?'ใช้เฉพาะครั้งนี้ (ไม่ได้บันทึกบัตร)':st.method==='card'?'บัตรที่บันทึกไว้':METHODS[st.method].sub}</div></div>
+       <button class="pill blue" style="font-size:13.5px;padding:7px 14px" data-a="change">เปลี่ยน</button></div>
+     <div class="sec-t">รายละเอียดค่าโดยสาร</div>
+     <div class="card">
+       <div class="kv"><span class="k">ค่าโดยสาร</span><span class="v">${baht(fare(st))}</span></div>
+       <div class="kv"><span class="k">ส่วนลดโปรโมชั่น</span><span class="v">${baht(DISC)}</span></div>
+       <div class="hr"></div>
+       <div class="kv total"><span class="k">ยอดชำระทั้งหมด</span><span class="v">${baht(fare(st)-DISC)}</span></div>
+     </div>
+     <div class="note green" style="margin-top:12px">${ic('check',16,2.6)}<span>ชำระค่าโดยสารโดยตรง ไม่ต้องเติมเงินเข้า Wallet</span></div>
+   </div>
+   <div class="foot"><button class="btn" data-a="pay" ${st.proc?'disabled':''}>${st.proc?'<span class="spin" style="width:20px;height:20px;border-width:3px;margin:0;border-color:rgba(255,255,255,.35);border-top-color:#fff"></span> กำลังดำเนินการ…':'ยืนยันการเรียกรถและชำระเงิน'}</button>
+     <div class="small muted" style="text-align:center;margin-top:6px">ระบบจะเรียกเก็บ ${baht(fare(st))} จาก ${methodLabel(st)}</div>${home()}</div></div>`;
+}
+
+/* ===== Screen 5 ===== */
+function scr5(st){
+  const ref=st.ref||'MV-261126-0458';
+  return `<div class="screen" style="background:#fff">${statusBar()}
+   <div class="content" style="padding:20px 20px 8px">
+     <div class="success-ic">${ic('check',46,3.2,'#fff')}</div>
+     <h2 style="text-align:center;font-size:24px;font-weight:700">ชำระเงินสำเร็จ</h2>
+     <p style="text-align:center;color:var(--ink2);font-size:15px">ยืนยันการเรียกรถเรียบร้อยแล้ว</p>
+     <div style="text-align:center;margin:14px 0 16px"><div class="small muted">ยอดที่ชำระ</div><div style="font-size:32px;font-weight:700;line-height:1.3">${baht(fare(st))}</div></div>
+     <div class="card" style="background:var(--bg)">
+       <div class="kv"><span class="k">ช่องทางการชำระเงิน</span><span class="v">${methodLabel(st)}</span></div>
+       <div class="kv"><span class="k">เลขที่การจอง</span><span class="v" style="font-variant-numeric:tabular-nums">${ref}</span></div>
+       <div class="kv"><span class="k">สถานะการชำระเงิน</span><span class="pill green">${ic('check',12,3)} สำเร็จ · Successful</span></div>
+       <div class="kv"><span class="k">สถานะการจอง</span><span class="pill green">${ic('check',12,3)} ยืนยันแล้ว · Confirmed</span></div>
+     </div>
+     <div class="card row" style="margin-top:10px;border:1.5px solid var(--line);padding:12px 14px">${METHODS.wallet.logo()}<div style="flex:1"><div class="small muted">ยอดเงินใน MuvMi Wallet</div><div style="font-weight:700;font-size:17px">${baht(st.wallet)}</div></div></div>
+     <div class="note blue" style="margin-top:8px">${ic('info',16,2.2)}<span>${st.method==='wallet'?'ชำระจากยอดเงินใน MuvMi Wallet':'ยอดเงินใน MuvMi Wallet ของคุณไม่เปลี่ยนแปลง'}</span></div>
+   </div>
+   <div class="foot" style="box-shadow:none"><button class="btn" data-a="track">ติดตามสถานะรถ</button><button class="btn text" data-a="receipt">ดูรายละเอียดการชำระเงิน</button>${home()}</div></div>`;
+}
+
+/* ===== Screen 6 ===== */
+function qrSVG(seed,size=150){
+  let s=seed;const r=()=>{s=(s*9301+49297)%233280;return s/233280;};
+  const n=25,c=size/n;let out=`<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}"><rect width="${size}" height="${size}" fill="#fff"/>`;
+  const fin=(x,y)=>`<rect x="${x*c}" y="${y*c}" width="${7*c}" height="${7*c}" fill="#141A26"/><rect x="${(x+1)*c}" y="${(y+1)*c}" width="${5*c}" height="${5*c}" fill="#fff"/><rect x="${(x+2)*c}" y="${(y+2)*c}" width="${3*c}" height="${3*c}" fill="#141A26"/>`;
+  for(let y=0;y<n;y++)for(let x=0;x<n;x++){const inF=(x<8&&y<8)||(x>16&&y<8)||(x<8&&y>16);if(!inF&&r()>.52)out+=`<rect x="${x*c}" y="${y*c}" width="${c}" height="${c}" fill="#141A26"/>`;}
+  return out+fin(0,0)+fin(18,0)+fin(0,18)+'</svg>';
+}
+function scr6(st,live){
+  const arrived=st.arrived, boarded=st.boarded;
+  let qr;
+  if(boarded) qr=`<div class="qrbox" style="background:var(--green-l)"><div class="qrlock" style="background:var(--green);border:0;color:#fff">${ic('check',34,3)}</div><div style="flex:1"><div style="font-weight:700;font-size:15px;color:#11652F">ยืนยันการขึ้นรถแล้ว</div><div class="small" style="color:var(--ink2);line-height:1.5">สแกน QR บนรถ MuvMi #127 สำเร็จ · ไม่มีขั้นตอนชำระเงินเพิ่ม</div></div></div>`;
+  else if(arrived) qr=`<div class="qrbox" style="border:1.5px solid var(--blue);flex-direction:column;align-items:stretch;gap:10px"><div class="row"><div class="qrlock" style="width:56px;height:56px;background:var(--blue-l);border:0;color:var(--blue)">${ic('scan',28,2)}</div><div style="flex:1"><div style="font-weight:700;font-size:15px">รถมาถึงจุดรับแล้ว</div><div class="small" style="color:var(--ink2);line-height:1.5">สแกน QR Code บนตัวรถ เพื่อยืนยันว่าขึ้นรถถูกคัน</div></div></div><div class="row"><span class="pill blue" id="qrCount">${ic('clock',12,2.4)} เหลือเวลา ${st.qrLeft??90} วินาที</span><button class="btn sm" style="width:auto;padding:0 18px;margin-left:auto" data-a="scan">${ic('scan',18,2.2)} สแกน QR บนรถ</button></div></div>`;
+  else qr=`<div class="qrbox"><div class="qrlock">${ic('scan',30,1.8)}</div><div style="flex:1"><div style="font-weight:700;font-size:15px">สแกน QR Code บนรถเพื่อขึ้นรถ</div><div class="small" style="color:var(--ink2);line-height:1.5">ปุ่มสแกนจะเปิดเมื่อรถมาถึงจุดรับ</div>${live?'<button class="demo-link" style="margin-top:4px" data-a="arrive">จำลอง: รถมาถึงแล้ว</button>':''}</div></div>`;
+  const eta = boarded?['กำลังเดินทางไป','ถึงใน ~8 นาที','var(--blue)']:arrived?['สถานะ','รถถึงแล้ว','var(--green)']:['รถจะมาถึงในประมาณ','5 นาที','var(--ink)'];
+  return `<div class="screen">
+   <div class="map" style="height:360px">${mapSVG('track',360,{animate:live,arrived:arrived||boarded,st})}</div>
+   ${statusBar()}
+   <button class="floatbtn" style="left:16px;top:53px" data-a="back" aria-label="ย้อนกลับ">${ic('back',22,2.4)}</button>
+   <div class="sheet" style="top:268px">
+     <div class="grab"></div>
+     <div class="content" data-scroll style="padding:4px 16px 8px">
+       <div class="row" style="justify-content:space-between;margin-bottom:8px">
+         <div><div class="small muted">${eta[0]}</div><div style="font-size:26px;font-weight:700;line-height:1.25;color:${eta[2]}">${eta[1]}</div></div>
+         <div style="text-align:right"><div class="pill blue" style="font-size:13px;padding:4px 10px">${ic('tuk',14,2.2)} MuvMi #127</div><div class="small muted" style="margin-top:4px">ทะเบียน 1กษ 3092 กทม.</div></div>
+       </div>
+       <div class="drv"><div class="avatar">ส</div><div style="min-width:0"><div style="font-weight:600;font-size:14.5px">คุณสมศักดิ์</div><div class="small muted">คนขับ · ★ 4.9</div></div>
+         <button class="chatbtn" data-a="chat">${ic('chat',18,2.2)} แชตกับคนขับ${st.unread?`<span class="badge">${st.unread}</span>`:''}</button></div>
+       <div class="card" style="padding:12px 14px;margin-top:8px">${tripBlock(st)}<div class="hr"></div>
+         <div class="kv" style="font-size:14px"><span class="k">ประเภทบริการ</span><span class="v">Saver · 1 คน</span></div></div>
+       <div class="card row" style="margin-top:8px;padding:10px 14px">${methodLogo(st)}<div style="flex:1;min-width:0"><div style="font-weight:600;font-size:14.5px">${methodLabel(st)}</div><div class="small muted">ยอดที่ชำระ ${baht(fare(st))}</div></div><span class="pill green" style="font-size:12.5px;padding:4px 10px">${ic('check',13,3)} ชำระเงินแล้ว</span></div>
+       <div style="margin-top:8px">${qr}</div>
+       ${boarded?'':`<button class="btn text" style="color:var(--red);margin-top:2px" data-a="cancel">ยกเลิกการเรียกรถ</button>`}
+     </div>
+     ${home()}
+   </div></div>`;
+}
+
+/* ===== Refund rules (Direct Payment → คืนเงินกลับช่องทางเดิม) ===== */
+function refundInfo(st){
+  switch(st.method){
+    case 'card': return {to:`บัตร ${methodLabel(st)}`,time:'ยกเลิกรายการทันที · ยอดกลับเข้าบัตรภายใน 7–14 วันทำการ (ขึ้นกับธนาคารผู้ออกบัตร)'};
+    case 'mbank': return {to:'บัญชีธนาคารที่ใช้ชำระ',time:'ภายใน 3–7 วันทำการ (ขึ้นกับธนาคาร)'};
+    case 'promptpay': return st.refundTo==='wallet'?{to:'MuvMi Wallet',time:'ทันที',instant:true}:{to:'บัญชีธนาคาร/พร้อมเพย์ที่ใช้ชำระ',time:'ภายใน 3–7 วันทำการ'};
+    case 'truemoney': return {to:'TrueMoney Wallet',time:'ภายใน 1–3 วันทำการ'};
+    case 'alipay': return {to:'Alipay account',time:'ภายใน 1–7 วันทำการ · 1–7 business days'};
+    default: return {to:'MuvMi Wallet',time:'ทันที',instant:true};
+  }
+}
+const REASONS=['รอรถนานเกินไป','เปลี่ยนใจ / ไม่ต้องการเดินทางแล้ว','ต้องการเปลี่ยนจุดรับ-ส่ง','อื่น ๆ'];
+function chatHTML(st){
+  return `<div class="chatwrap">${statusBar()}
+   <div class="hdr" style="box-shadow:0 1px 0 var(--line)"><button class="iconbtn" data-a="chatClose" aria-label="ย้อนกลับ">${ic('back',24,2.4)}</button>
+     <div class="avatar" style="width:36px;height:36px;margin-left:2px">ส</div><div style="margin-left:10px"><div style="font-weight:700;font-size:15.5px">คุณสมศักดิ์ · MuvMi #127</div><div class="small" style="color:var(--green)">● ออนไลน์</div></div></div>
+   <div class="msgs" id="msgs"><div class="small muted" style="text-align:center">ข้อความจะถูกส่งถึงคนขับทันที · ใช้ได้จนจบการเดินทาง</div>
+     ${st.msgs.map(m=>`<div class="bub ${m.me?'me':''}">${m.t}<small>${m.time}${m.me?' · อ่านแล้ว':''}</small></div>`).join('')}
+     ${st.typing?'<div class="typing"><i></i><i></i><i></i></div>':''}</div>
+   <div class="qr-chips">${['ถึงจุดรับแล้ว รออยู่นะคะ','ขอเวลาอีก 2 นาที','ฉันใส่เสื้อสีฟ้า','I\'m at the pickup point'].map(q=>`<button data-a="quick" data-k="${q}">${q}</button>`).join('')}</div>
+   <div class="chatin"><input id="chatIn" placeholder="พิมพ์ข้อความถึงคนขับ…" autocomplete="off"><button class="sendbtn" data-a="send" aria-label="ส่ง">${ic('send',20,2.2)}</button></div>
+   <div style="background:#fff">${home()}</div></div>`;
+}
+/* ===== Modals ===== */
+function modalHTML(st){
+  const m=st.modal;let h='';
+  if(st.proc){
+    const s=st.proc;const cls=i=>s>i?'ok':s===i?'act':'';
+    const c=st.procKind==='cancel';
+    h+=`<div class="dim center" style="z-index:36"><div class="proc"><div class="spin"></div><div style="font-weight:700;font-size:17px;margin-bottom:12px">${c?'กำลังยกเลิกการเรียกรถ':'กำลังดำเนินการ'}</div>
+      <div class="pstep ${cls(1)}"><span class="d">${s>1?ic('check',13,3):''}</span>${c?'ยกเลิกการเรียกรถ MuvMi #127':`ชำระเงิน ${baht(fare(st))} ผ่าน ${methodLabel(st)}`}</div>
+      <div class="pstep ${cls(2)}"><span class="d">${s>2?ic('check',13,3):''}</span>${c?`ส่งคำขอคืนเงิน ${baht(fare(st))}`:'ยืนยันการเรียกรถ'}</div>
+      <div class="small muted" style="margin-top:10px">กรุณาอย่าปิดแอปจนกว่าจะเสร็จสิ้น</div></div></div>`;
+  }
+  if(!m)return h;
+  const shell=(inner)=>`<div class="dim" data-a="dimclose"><div class="modal" data-stop>${'<div class="grab"></div>'}${inner}<div style="height:34px"></div></div></div>`;
+  const amt=`<div class="card row" style="background:var(--bg);margin:12px 0;justify-content:space-between"><span class="muted">ยอดชำระ (ตามค่าโดยสารจริง)</span><b style="font-size:18px">${baht(fare(st))}</b></div>`;
+  if(m.type==='mbank'){
+    if(!m.bank) h+=shell(`<h3>เลือกแอปธนาคาร</h3><p class="small muted">ระบบจะเปิดแอปธนาคารเพื่อยืนยันยอด ${baht(fare(st))} โดยไม่ต้องบันทึก QR</p><div style="margin-top:12px">${BANKS.map(([n,c])=>`<button class="bankopt" data-a="bank" data-k="${n}"><span class="lg" style="background:${c}">${n.slice(0,2)}</span>${n}<span style="margin-left:auto;color:var(--ink3)">${ic('chev',18)}</span></button>`).join('')}</div><button class="btn text" data-a="closeModal" style="margin-top:6px">ยกเลิก</button>`);
+    else h+=shell(`<div class="pill" style="background:#F1F3F7;color:var(--ink2);margin-top:6px">${ic('phone',12,2)} จำลองหน้าจอแอป ${m.bank}</div><h3>ยืนยันการชำระเงิน</h3><p class="small muted">ร้านค้า: MuvMi · รายการ: ค่าโดยสาร Saver</p>${amt}<button class="btn" data-a="authOK">อนุมัติการชำระเงิน</button><button class="btn text" data-a="closeModal">ยกเลิก</button>`);
+  }
+  if(m.type==='promptpay') h+=shell(`<h3>ชำระด้วย PromptPay</h3><p class="small muted">QR นี้ระบุยอดตามค่าโดยสารจริง — ไม่มีการเติมเงินเข้า Wallet</p>${amt}<div style="display:flex;justify-content:center"><div style="padding:10px;border:1px solid var(--line);border-radius:14px">${qrSVG(1555,150)}</div></div><p class="small muted" style="text-align:center;margin:8px 0 12px">QR หมดอายุใน 4:59 นาที</p><button class="btn" data-a="authOK">ชำระแล้ว (จำลอง)</button><button class="btn text" data-a="closeModal">ยกเลิก</button>`);
+  if(m.type==='truemoney') h+=shell(`<h3>ยืนยันกับ TrueMoney Wallet</h3><p class="small muted">บัญชี 08x-xxx-5678 · ตัดเงินเฉพาะค่าโดยสารเที่ยวนี้</p>${amt}<button class="btn" style="background:#E8651A" data-a="authOK">ยืนยันชำระ ${baht(fare(st))}</button><button class="btn text" data-a="closeModal">ยกเลิก</button>`);
+  if(m.type==='alipay') h+=shell(`<h3>Alipay — Authorize payment</h3><p class="small muted">อนุมัติการชำระในแอป Alipay · Pay the exact fare, no top-up needed</p>${amt}<button class="btn" style="background:#1677FF" data-a="authOK">Authorize · อนุมัติ</button><button class="btn text" data-a="closeModal">Cancel · ยกเลิก</button>`);
+  if(m.type==='receipt'){
+    const t=st.paidAt||'26 พ.ย. 2569 · 09:41';
+    h+=shell(`<h3>รายละเอียดการชำระเงิน</h3><p class="small muted">${t}</p>
+     <div class="card" style="background:var(--bg);margin-top:12px">
+      <div class="kv"><span class="k">เลขที่การจอง</span><span class="v">${st.ref||'MV-261126-0458'}</span></div>
+      <div class="kv"><span class="k">รหัสธุรกรรม</span><span class="v">TXN-${(st.ref||'0458').slice(-4)}8F21</span></div>
+      <div class="kv"><span class="k">เส้นทาง</span><span class="v" style="text-align:right;font-size:13px">${PLACES[st.from].short} → ${PLACES[st.to].short}</span></div>
+      <div class="kv"><span class="k">บริการ</span><span class="v">Saver · 1 คน</span></div><div class="hr"></div>
+      <div class="kv"><span class="k">ค่าโดยสาร</span><span class="v">${baht(fare(st))}</span></div>
+      <div class="kv"><span class="k">ส่วนลดโปรโมชั่น</span><span class="v">${baht(DISC)}</span></div>
+      <div class="kv total"><span class="k">ชำระทั้งหมด</span><span class="v">${baht(fare(st))}</span></div><div class="hr"></div>
+      <div class="kv"><span class="k">ช่องทาง</span><span class="v">${methodLabel(st)}</span></div>
+      <div class="kv"><span class="k">สถานะ</span><span class="pill green">สำเร็จ · Successful</span></div></div>
+     <button class="btn ghost" style="margin-top:14px" data-a="closeModal">ปิด</button>`);
+  }
+  if(m.type==='topup'){
+    const need=Math.max(0,fare(st)-st.wallet);const tu=st.tu;
+    const amts=[...(need>0?[need]:[]),100,200,500].slice(0,4);
+    const srcs=[['promptpay','PromptPay','QR ในแอป ไม่ต้องบันทึกรูปหรือสลับแอป'],['mbank','Mobile Banking','อนุมัติในแอปธนาคาร'],...st.saved.map((c,i)=>['saved'+i,cardLabel(c),'บัตรที่บันทึกไว้'])];
+    const srcName=(srcs.find(x=>x[0]===tu.src)||srcs[0])[1];
+    if(m.step==='form') h+=shell(`<h3>เติมเงินเข้า MuvMi Wallet</h3>
+      <div class="card row" style="background:var(--bg);margin:10px 0 4px;justify-content:space-between"><span class="muted">ยอดคงเหลือ</span><b style="font-size:17px">${baht(st.wallet)}</b></div>
+      ${need>0?`<p class="small muted" style="margin:0 2px">ค่าโดยสารเที่ยวนี้ ${baht(fare(st))} · ขาดอีก ${baht(need)}</p>`:''}
+      <div class="sec-t" style="margin-top:12px">จำนวนเงินที่ต้องการเติม</div>
+      <div class="amts">${amts.map(a=>`<button class="amt ${tu.amt===a?'on':''}" data-a="tuAmt" data-i="${a}">${a===need?'<small>เท่าที่ขาด</small>':''}${baht(a,0)}</button>`).join('')}</div>
+      <div class="note green" style="margin-top:10px">${ic('check',16,2.6)}<span>ไม่มียอดเติมขั้นต่ำ — เติมเท่าที่ต้องใช้ ไม่มีเงินเหลือค้างใน Wallet</span></div>
+      <div class="sec-t" style="margin-top:12px">เติมเงินด้วย</div>
+      ${srcs.map(([k,n,sub])=>`<button class="rad ${tu.src===k?'on':''}" data-a="tuSrc" data-k="${k}"><span class="radio"></span><div><div style="font-weight:600">${n}</div><div class="small muted">${sub}</div></div></button>`).join('')}
+      <div style="height:10px"></div>
+      <button class="btn" data-a="tuGo">เติมเงิน ${baht(tu.amt)}</button>
+      <button class="btn text" data-a="closeModal">ยกเลิก</button>`);
+    if(m.step==='auth') h+=shell(tu.src==='promptpay'
+      ?`<h3>เติมเงินด้วย PromptPay</h3><p class="small muted">ชำระผ่านแอปธนาคารบนเครื่องนี้ได้ทันที ไม่ต้องบันทึก QR</p>
+        <div class="card row" style="background:var(--bg);margin:12px 0;justify-content:space-between"><span class="muted">ยอดเติมเงิน</span><b style="font-size:18px">${baht(tu.amt)}</b></div>
+        <div style="display:flex;justify-content:center"><div style="padding:10px;border:1px solid var(--line);border-radius:14px">${qrSVG(3535,140)}</div></div>
+        <div style="height:12px"></div><button class="btn" data-a="tuDo">ชำระแล้ว (จำลอง)</button><button class="btn text" data-a="tuBack">ย้อนกลับ</button>`
+      :`<div class="pill" style="background:#F1F3F7;color:var(--ink2);margin-top:6px">${ic('phone',12,2)} จำลองหน้าจอแอปธนาคาร</div><h3>ยืนยันการเติมเงิน</h3><p class="small muted">ปลายทาง: MuvMi Wallet</p>
+        <div class="card row" style="background:var(--bg);margin:12px 0;justify-content:space-between"><span class="muted">ยอดเติมเงิน</span><b style="font-size:18px">${baht(tu.amt)}</b></div>
+        <button class="btn" data-a="tuDo">อนุมัติการเติมเงิน</button><button class="btn text" data-a="tuBack">ย้อนกลับ</button>`);
+    if(m.step==='proc') h+=shell(`<div style="text-align:center;padding:24px 0 10px"><div class="spin"></div><div style="font-weight:700;font-size:17px">กำลังเติมเงิน ${baht(tu.amt)}</div><div class="small muted" style="margin-top:4px">ผ่าน ${srcName}</div></div>`);
+    if(m.step==='done') h+=shell(`<div style="text-align:center;padding-top:8px"><div class="success-ic" style="width:68px;height:68px">${ic('check',38,3.2,'#fff')}</div>
+        <div style="font-weight:700;font-size:20px">เติมเงินสำเร็จ</div><div class="small muted">เติม ${baht(tu.amt)} ผ่าน ${srcName}</div></div>
+        <div class="card row" style="background:var(--bg);margin:14px 0;justify-content:space-between"><span class="muted">ยอดคงเหลือใหม่</span><b style="font-size:18px;color:var(--blue)">${baht(st.wallet)}</b></div>
+        ${walletOK(st)?`<button class="btn" data-a="tuUse">ใช้ MuvMi Wallet ชำระ ${baht(fare(st))}</button>`:''}
+        <button class="btn text" data-a="closeModal">ปิด</button>`);
+  }
+  if(m.type==='chat') h+=chatHTML(st);
+  if(m.type==='scan'){
+    h+=`<div class="scanwrap">${statusBar(true)}
+      <div class="hdr" style="background:none;color:#fff;width:100%"><button class="iconbtn" style="color:#fff" data-a="closeModal" aria-label="ปิด">${ic('x',24,2.4)}</button><h2>สแกน QR บนรถ</h2></div>
+      ${m.ok?`<div style="margin-top:90px;text-align:center;padding:0 28px"><div class="success-ic" style="box-shadow:0 0 0 10px rgba(22,163,74,.25)">${ic('check',46,3.2,'#fff')}</div>
+          <div style="font-size:21px;font-weight:700">ยืนยันการขึ้นรถสำเร็จ</div><div style="opacity:.75;margin-top:4px;font-size:14.5px">รถ MuvMi #127 ตรงกับการจองของคุณ<br>ค่าโดยสารชำระเรียบร้อยแล้ว</div></div>
+          <div style="margin-top:auto;width:100%;padding:0 16px"><button class="btn" data-a="board">เริ่มการเดินทาง</button>${home(true)}</div>`
+       :`<div class="vf"><span class="cn tl"></span><span class="cn tr"></span><span class="cn bl"></span><span class="cn br"></span>
+          <div class="sticker">${qrSVG(127,112)}<div style="margin-top:2px">MuvMi #127</div></div><div class="line"></div></div>
+          <div style="margin-top:28px;text-align:center;font-size:15px;padding:0 30px">หันกล้องไปที่ QR Code บนตัวรถ</div>
+          <div style="opacity:.6;font-size:13px;margin-top:4px">กำลังค้นหา QR Code…</div>
+          <div style="margin-top:auto;width:100%">${home(true)}</div>`}</div>`;
+  }
+  if(m.type==='cancel'){
+    const r=refundInfo(st);const pp=st.method==='promptpay';
+    h+=shell(`<h3>ยกเลิกการเรียกรถ?</h3><p class="small muted">ยกเลิกได้โดยไม่มีค่าธรรมเนียม ก่อนสแกน QR ขึ้นรถ</p>
+      <div class="sec-t" style="margin-top:12px">เหตุผลในการยกเลิก</div>
+      ${REASONS.map((x,i)=>`<button class="rad ${st.cReason===i?'on':''}" data-a="reason" data-i="${i}"><span class="radio"></span>${x}</button>`).join('')}
+      <div class="sec-t" style="margin-top:10px">การคืนเงิน ${baht(fare(st))}</div>
+      ${pp?`<div class="card" style="background:var(--bg);padding:6px 12px">
+          <button class="rad ${st.refundTo==='source'?'on':''}" data-a="refundTo" data-k="source"><span class="radio"></span><div><div style="font-weight:600">คืนเข้าบัญชีที่ใช้ชำระ</div><div class="small muted">ภายใน 3–7 วันทำการ</div></div></button>
+          <button class="rad ${st.refundTo==='wallet'?'on':''}" data-a="refundTo" data-k="wallet"><span class="radio"></span><div><div style="font-weight:600">รับเป็นยอดใน MuvMi Wallet</div><div class="small muted">ได้ทันที · ใช้ได้กับการเดินทางครั้งถัดไป</div></div></button></div>`
+       :`<div class="note blue">${ic('refund',16,2.2)}<div>คืนเงินตามยอดจริงไปที่ <b>${r.to}</b><br>${r.time}</div></div>`}
+      <div style="height:12px"></div>
+      <button class="btn danger" data-a="confirmCancel" ${st.cReason==null?'disabled':''}>ยืนยันยกเลิกและขอคืนเงิน</button>
+      <button class="btn text" data-a="closeModal">กลับไปรอรถ</button>`);
+  }
+  if(m.type==='cancelled'){
+    const r=st.cancelled;
+    h+=`<div class="dim" style="background:#fff;align-items:stretch;z-index:34"><div style="display:flex;flex-direction:column;width:100%">${statusBar()}
+      <div class="content" style="background:#fff;padding:24px 20px">
+        <div class="success-ic" style="background:var(--ink2);box-shadow:0 0 0 10px #EEF0F4">${ic('x',40,3.2,'#fff')}</div>
+        <h2 style="text-align:center;font-size:22px;font-weight:700">ยกเลิกการเรียกรถแล้ว</h2>
+        <p style="text-align:center;color:var(--ink2);font-size:14.5px">เหตุผล: ${REASONS[r.reason]}</p>
+        <div class="card" style="background:var(--bg);margin-top:18px">
+          <div class="kv"><span class="k">เลขที่การจอง</span><span class="v">${st.ref||'MV-261126-0458'}</span></div>
+          <div class="kv"><span class="k">ค่าธรรมเนียมการยกเลิก</span><span class="v">${baht(0)}</span></div>
+          <div class="kv total"><span class="k">ยอดคืนเงิน</span><span class="v">${baht(r.amount)}</span></div><div class="hr"></div>
+          <div class="kv"><span class="k">คืนไปที่</span><span class="v" style="text-align:right">${r.to}</span></div>
+          <div class="kv"><span class="k">ระยะเวลา</span><span class="v" style="text-align:right;font-size:13px;max-width:200px">${r.time}</span></div>
+          <div class="kv"><span class="k">สถานะ</span>${r.instant?`<span class="pill green">${ic('check',12,3)} คืนเงินแล้ว</span>`:`<span class="pill" style="background:var(--amber-l);color:var(--amber)">${ic('clock',12,2.4)} กำลังดำเนินการคืนเงิน</span>`}</div>
+        </div>
+        ${r.instant?`<div class="note green" style="margin-top:10px">${ic('wallet',16,2.2)}<span>ยอดเงินใน MuvMi Wallet ตอนนี้ ${baht(st.wallet)}</span></div>`:`<div class="note blue" style="margin-top:10px">${ic('info',16,2.2)}<span>ระบบจะแจ้งเตือนเมื่อคืนเงินเสร็จสิ้น ไม่มีเงินค้างใน Wallet</span></div>`}
+      </div>
+      <div class="foot" style="box-shadow:none"><button class="btn" data-a="newTrip">กลับไปหน้าเรียกรถ</button>${home()}</div></div></div>`;
+  }
+  return h;
+}
+
+/* ================= RENDER ================= */
+const SCR=[null,scr1,scr2,scr3,scr4,scr5,scr6];
+const phone=document.getElementById('phone');
+function render(){
+  const sc=phone.querySelector('[data-scroll]');const top=sc?sc.scrollTop:0;const prev=phone.dataset.s;
+  const mt=S.modal?S.modal.type+(S.modal.ok?'1':'')+(S.modal.bank||''):'';phone.classList.toggle('noanim',mt!==''&&mt===phone.dataset.mt);phone.dataset.mt=mt;
+  const ci=phone.querySelector('#chatIn');const civ=ci?ci.value:'';const cif=ci&&document.activeElement===ci;
+  phone.innerHTML=SCR[S.screen](S,true)+modalHTML(S)+(S.toast?`<div class="toast">${ic('info',18,2.2)}<span>${S.toast}</span></div>`:'');
+  phone.dataset.s=S.screen;
+  const ci2=phone.querySelector('#chatIn');if(ci2){ci2.value=civ;if(cif)ci2.focus();}
+  const ms=phone.querySelector('#msgs');if(ms)ms.scrollTop=ms.scrollHeight;
+  if(prev==S.screen){const n=phone.querySelector('[data-scroll]');if(n)n.scrollTop=top;}
+  document.getElementById('steps').innerHTML=STEPS.map((t,i)=>`<li class="${i+1===S.screen?'on':i+1<S.screen?'done':''}"><b>0${i+1}</b>${t}</li>`).join('');
+  const e=EXPL[S.screen-1];
+  document.getElementById('explain').innerHTML=`<h3>0${S.screen} — ${e.t}</h3><dl><dt>หน้าจอนี้ทำอะไร</dt><dd>${e.a}</dd><dt>ปรับปรุงประสบการณ์เดิมอย่างไร</dt><dd>${e.b}</dd><dt>สนับสนุน Direct Payment อย่างไร</dt><dd>${e.c}</dd></dl>`;
+}
+function go(n){
+  const idx=S.hist.indexOf(n);
+  if(idx>=0)S.hist=S.hist.slice(0,idx); else S.hist.push(S.screen);
+  S.screen=n;S.modal=null;
+  if(n===2)S.sel=null;
+  render();
+}
+function back(){if(S.hist.length){S.screen=S.hist.pop();S.modal=null;if(S.screen===2)S.sel=null;render();}}
+let toastT;
+function toast(msg){S.toast=msg;render();clearTimeout(toastT);toastT=setTimeout(()=>{S.toast=null;render();},2400);}
+function resetAll(){clearInterval(qrT);S=fresh();render();}
+
+function startProcessing(){
+  S.modal=null;S.proc=1;render();
+  setTimeout(()=>{S.proc=2;render();
+    setTimeout(()=>{S.proc=3;render();
+      setTimeout(()=>{
+        const d=new Date();const pad=x=>String(x).padStart(2,'0');
+        S.ref='MV-261126-'+String(Math.floor(1000+Math.random()*8999));
+        S.paidAt=`26 พ.ย. 2569 · ${pad(d.getHours())}:${pad(d.getMinutes())} น.`;
+        if(S.method==='wallet')S.wallet-=fare(S);
+        S.proc=null;S.hist=[];S.screen=5;render();
+      },450);
+    },1300);
+  },1400);
+}
+let qrT,scanT;
+function startCancel(){
+  const amt=fare(S);const r=refundInfo(S);
+  S.modal=null;S.procKind='cancel';S.proc=1;clearInterval(qrT);render();
+  setTimeout(()=>{S.proc=2;render();
+    setTimeout(()=>{S.proc=3;render();
+      setTimeout(()=>{
+        if(r.instant)S.wallet+=amt;
+        S.cancelled={reason:S.cReason,amount:amt,...r};
+        S.proc=null;S.procKind='pay';S.modal={type:'cancelled'};render();
+      },450);
+    },1200);
+  },1100);
+}
+function runTopup(){S.modal={type:'topup',step:'proc'};render();setTimeout(()=>{S.wallet+=S.tu.amt;S.modal={type:'topup',step:'done'};render();},1500);}
+function newTrip(){
+  const keep={saved:S.saved,wallet:S.wallet,method:S.method==='wallet'||walletOK(S)?S.method:S.method,card:S.card,from:S.from,to:S.to};
+  clearInterval(qrT);S=Object.assign(fresh(),keep);
+  if(S.card&&!S.card.saved&&S.method==='card'){S.method='wallet';S.card=null;}
+  render();
+}
+const REPLIES=[[/รอ|ถึง/,'รับทราบครับ อีกประมาณ 3 นาทีถึงจุดรับครับ'],[/เสื้อ|ใส่/,'ได้ครับ เดี๋ยวผมมองหานะครับ 👍'],[/นาที|ช้า|เวลา|รีบ/,'ไม่เป็นไรครับ ผมรอที่จุดรับให้ครับ'],[/[a-z]/i,"OK! I'll be there in about 3 minutes."]];
+function sendMsg(t){
+  t=t.trim();if(!t)return;const d=new Date();const tm=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+  S.msgs.push({me:true,t,time:tm});const ci=phone.querySelector('#chatIn');if(ci)ci.value='';
+  render();
+  setTimeout(()=>{S.typing=true;if(S.modal&&S.modal.type==='chat')render();
+    setTimeout(()=>{S.typing=false;const rep=(REPLIES.find(([re])=>re.test(t))||[0,'รับทราบครับ 🙏'])[1];
+      S.msgs.push({me:false,t:rep,time:tm});
+      if(S.modal&&S.modal.type==='chat')render();else{S.unread++;render();}
+    },1400);
+  },500);
+}
+phone.addEventListener('click',ev=>{
+  const t=ev.target.closest('[data-a]');if(!t)return;
+  const a=t.dataset.a;
+  if(a==='dimclose'&&S.modal&&S.modal.type==='topup'&&S.modal.step==='proc')return;
+  if(a==='dimclose'){if(!ev.target.closest('[data-stop]')){S.modal=null;render();}return;}
+  if(S.proc)return; // lock UI while processing
+  switch(a){
+    case 'back':back();break;
+    case 'go2':go(2);break;
+    case 'book':
+      if(S.method==='wallet'&&!walletOK(S)){toast('ยอดใน Wallet ไม่เพียงพอ — เลือกช่องทางชำระตามยอดจริงได้เลย');setTimeout(()=>go(2),700);}
+      else go(4);
+      break;
+    case 'sel':S.sel=t.dataset.k;render();break;
+    case 'addcard':go(3);break;
+    case 'confirmPM':{
+      const k=S.sel??(S.method==='card'?(S.card&&S.card.saved?'saved'+S.saved.indexOf(S.card):'newcard'):S.method);
+      if(k==='wallet'&&!walletOK(S))return;
+      if(k==='newcard'){ if(S.card&&!S.card.saved&&S.method==='card'&&S.sel===null){go(4);} else go(3); return;}
+      if(k.startsWith('saved')){S.card=S.saved[+k.slice(5)];S.method='card';}
+      else S.method=k;
+      go(4);break;}
+    case 'demofill':S.form={...S.form,name:'SOMCHAI JAIDEE',num:'4111 2222 3333 4826',exp:'08/29',cvv:'123'};S.touched=false;render();break;
+    case 'togglesave':S.form.save=!S.form.save;render();break;
+    case 'addCardSubmit':{
+      S.touched=true;const e=validate(S.form);
+      if(Object.keys(e).length){render();const f=phone.querySelector('.field.err input');if(f)f.focus();return;}
+      const d=S.form.num.replace(/\D/g,'');
+      const card={brand:detectBrand(d),last4:d.slice(-4),saved:S.form.save};
+      if(card.saved && !S.saved.some(c=>c.last4===card.last4))S.saved.push(card);
+      S.card=card;S.method='card';
+      S.form={name:'',num:'',exp:'',cvv:'',save:true};S.touched=false;
+      go(4);
+      toast(card.saved?`บันทึกบัตร ${cardLabel(card)} เรียบร้อยแล้ว`:`ใช้บัตร ${cardLabel(card)} สำหรับครั้งนี้`);
+      break;}
+    case 'change':go(2);break;
+    case 'pay':
+      if(['mbank','promptpay','truemoney','alipay'].includes(S.method)){S.modal={type:S.method};render();}
+      else startProcessing();
+      break;
+    case 'bank':S.modal={type:'mbank',bank:t.dataset.k};render();break;
+    case 'authOK':startProcessing();break;
+    case 'closeModal':clearTimeout(scanT);S.modal=null;render();break;
+    case 'track':go(6);break;
+    case 'receipt':S.modal={type:'receipt'};render();break;
+    case 'arrive':{
+      S.arrived=true;S.qrLeft=90;render();clearInterval(qrT);
+      qrT=setInterval(()=>{if(S.qrLeft<=0||S.boarded){clearInterval(qrT);return;}S.qrLeft--;const el=document.getElementById('qrCount');if(el)el.innerHTML=`${ic('clock',12,2.4)} เหลือเวลา ${S.qrLeft} วินาที`;},1000);
+      break;}
+    case 'scan':
+      S.modal={type:'scan'};render();clearTimeout(scanT);
+      scanT=setTimeout(()=>{if(S.modal&&S.modal.type==='scan'){S.modal={type:'scan',ok:true};render();}},1900);
+      break;
+    case 'board':S.boarded=true;S.modal=null;clearInterval(qrT);render();break;
+    case 'chat':S.modal={type:'chat'};S.unread=0;render();{const ci=phone.querySelector('#chatIn');if(ci)ci.focus();}break;
+    case 'chatClose':S.modal=null;render();break;
+    case 'send':sendMsg(phone.querySelector('#chatIn').value);break;
+    case 'quick':sendMsg(t.dataset.k);break;
+    case 'cancel':S.cReason=null;S.refundTo='source';S.modal={type:'cancel'};render();break;
+    case 'reason':S.cReason=+t.dataset.i;render();break;
+    case 'refundTo':S.refundTo=t.dataset.k;render();break;
+    case 'confirmCancel':if(S.cReason==null)return;startCancel();break;
+    case 'newTrip':newTrip();break;
+    case 'topup':{const need=Math.max(0,fare(S)-S.wallet);S.tu={amt:need>0?need:100,src:S.tu.src};S.modal={type:'topup',step:'form'};render();break;}
+    case 'tuAmt':S.tu.amt=+t.dataset.i;render();break;
+    case 'tuSrc':S.tu.src=t.dataset.k;render();break;
+    case 'tuGo':if(S.tu.src.startsWith('saved'))runTopup();else{S.modal={type:'topup',step:'auth'};render();}break;
+    case 'tuBack':S.modal={type:'topup',step:'form'};render();break;
+    case 'tuDo':runTopup();break;
+    case 'tuUse':S.sel='wallet';S.modal=null;render();toast('เลือก MuvMi Wallet แล้ว — กดยืนยันช่องทางการชำระเงินเพื่อไปต่อ');break;
+    case 'dd':S.dd=S.dd===t.dataset.k?null:t.dataset.k;render();break;
+    case 'pick':if(t.disabled)return;S[t.dataset.k]=+t.dataset.i;S.dd=null;S.msgs=initMsgs(S.from);render();break;
+  }
+});
+phone.addEventListener('input',ev=>{
+  const f=ev.target.dataset.f;if(!f)return;
+  let v=ev.target.value;
+  if(f==='num'){v=fmtNum(v);ev.target.value=v;}
+  if(f==='exp'){v=fmtExp(v);ev.target.value=v;}
+  if(f==='cvv'){v=v.replace(/\D/g,'').slice(0,3);ev.target.value=v;}
+  if(f==='name'){v=v.toUpperCase();ev.target.value=v;}
+  S.form[f]=v;
+  const cc=phone.querySelector('.cc');if(cc)cc.innerHTML=ccPreview(S.form);
+  if(S.touched){const e=validate(S.form);['name','num','exp','cvv'].forEach(k=>{const w=document.getElementById('f_'+k);if(!w)return;w.classList.toggle('err',!!e[k]);w.querySelector('.e').textContent=e[k]||'';});}
+});
+phone.addEventListener('keydown',ev=>{if(ev.key==='Enter'&&ev.target.id==='chatIn'){sendMsg(ev.target.value);return;}if(ev.key==='Enter'&&ev.target.dataset.f){phone.querySelector('[data-a="addCardSubmit"]').click();}});
+
+/* ================= OVERVIEW ================= */
+function canon(i){
+  const st=fresh();st.screen=i;
+  if(i===2){st.sel='newcard';}
+  if(i===3){st.form={name:'SOMCHAI JAIDEE',num:'4111 2222 3333 4826',exp:'08/29',cvv:'123',save:true};}
+  if(i>=4){st.method='card';st.card={brand:'Visa',last4:'4826',saved:true};st.saved=[st.card];}
+  if(i===5){st.ref='MV-261126-0458';}
+  return st;
+}
+function buildOverview(){
+  const g=document.getElementById('ovGrid');
+  g.innerHTML=STEPS.map((t,k)=>{const i=k+1;const e=EXPL[k];
+    const arrow = (i===3)?`<div class="ov-arrow down">↓ ต่อไปยัง 04</div>`:(i<6?`<svg class="ov-arrow" viewBox="0 0 56 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h50M42 4l10 8-10 8"/></svg>`:'');
+    return `<div class="ov-item"><div class="ov-label"><span>0${i}</span> — ${t}</div>
+      <div class="ov-frame">${SCR[i](canon(i),false)}</div>${arrow}
+      <dl class="ov-text"><dt>หน้าจอนี้ทำอะไร</dt><dd>${e.a}</dd><dt>ปรับปรุงประสบการณ์เดิมอย่างไร</dt><dd>${e.b}</dd><dt>สนับสนุน Direct Payment อย่างไร</dt><dd>${e.c}</dd></dl></div>`;}).join('');
+}
+document.querySelectorAll('.ov-tools button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('.ov-tools button').forEach(x=>x.classList.toggle('on',x===b));
+  document.getElementById('ovWrap').style.zoom=b.dataset.z;
+});
+
+/* ================= MODE + FIT ================= */
+function setMode(m){
+  document.getElementById('preview').style.display=m==='preview'?'flex':'none';
+  document.getElementById('overview').style.display=m==='overview'?'block':'none';
+  document.getElementById('tabPreview').classList.toggle('on',m==='preview');
+  document.getElementById('tabOverview').classList.toggle('on',m==='overview');
+  if(m==='overview'){if(!document.getElementById('ovGrid').children.length)buildOverview();
+    const w=innerWidth-80;const need=390*3+84*2;if(w<need){const z=Math.max(.5,Math.floor(w/need*10)/10);document.getElementById('ovWrap').style.zoom=z;document.querySelectorAll('.ov-tools button').forEach(x=>x.classList.toggle('on',+x.dataset.z===z));}}
+  fit();
+}
+function fit(){
+  const d=document.getElementById('device');const avH=Math.max(260,innerHeight-document.querySelector('.topbar').offsetHeight-100);const avW=innerWidth-24;
+  const s=Math.min(1,avH/868,avW/414);d.style.zoom=s<1?s:'';
+}
+addEventListener('resize',fit);
+render();fit();
+</script>
+</body>
+</html>
